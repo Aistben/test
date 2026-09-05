@@ -1,0 +1,358 @@
+{
+  "id": "modules",
+  "stage": "bridge",
+  "order": 4,
+  "title": "Модули и импорт",
+  "subtitle": "Один файл — одна ответственность",
+  "minutes": 40,
+  "version": 1,
+  "goals": [
+    "Импортировать модули в трёх формах и выбирать уместную",
+    "Разбивать программу на свои модули (.py-файлы рядом)",
+    "Объяснять, зачем нужен if __name__ == \"__main__\"",
+    "Искать содержимое модуля через dir(), help() и документацию"
+  ],
+  "theory": [
+    {
+      "type": "text",
+      "text": "Когда программа растёт, складывать всё в один файл становится невозможно: не найти нужное, страшно что-то менять. Модуль (module) — это обычный файл `что-то.py` с функциями и константами, который другие файлы подключают словом `import`. Так устроен весь Python: `math`, `random`, `json` — тоже модули."
+    },
+    {
+      "type": "text",
+      "text": "Форма 1: `import имя` — импортируем весь модуль, обращаемся через точку. Имя всегда видно — откуда функция, понятно сразу."
+    },
+    {
+      "type": "code",
+      "code": "import math\n\nprint(math.sqrt(16))\nprint(math.ceil(4.1))\nprint(math.floor(4.9))",
+      "output": "4.0\n5\n4",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Форма 2: `from модуль import имя` — берём конкретные имена, пишем короче. Форма 3: алиас `as` — когда имя длинное или занято."
+    },
+    {
+      "type": "code",
+      "code": "from math import sqrt, pi\nimport datetime as dt\n\nprint(sqrt(25))\nprint(round(pi, 4))\nprint(dt.date(2026, 9, 5).strftime(\"%d.%m.%Y\"))",
+      "output": "5.0\n3.1416\n05.09.2026",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Свои модули — файлы рядом. Создаёшь `helpers.py` с функциями, а в `main.py` пишешь `import helpers`. Всё, что определено в модуле (функции, классы, константы), доступно через точку."
+    },
+    {
+      "type": "code",
+      "code": "# helpers.py\nVERSION = 2\n\n\ndef tidy(text):\n    return \" \".join(text.split())",
+      "caption": "файл helpers.py — просто модуль"
+    },
+    {
+      "type": "code",
+      "code": "# main.py\nimport helpers\n\nprint(helpers.tidy(\"  лишние   пробелы \"))\nprint(helpers.VERSION)",
+      "caption": "main.py использует helpers.py"
+    },
+    {
+      "type": "warning",
+      "text": "`from module import *` — запрещённый приём: непонятно, откуда взялось имя, можно случайно затереть свою переменную. Импорт должен быть явным: либо модуль целиком, либо конкретные имена по списку."
+    },
+    {
+      "type": "text",
+      "text": "Важное свойство Python: код модуля выполняется при импорте. Поэтому в модулях обычно только определения, а «запуск» прячут под защиту `if __name__ == \"__main__\":`. Этот код сработает, когда файл запустили напрямую (python helpers.py), но не сработает, когда файл просто импортировали."
+    },
+    {
+      "type": "code",
+      "code": "def shout(text):\n    return text.upper() + \"!\"\n\n\nif __name__ == \"__main__\":\n    print(shout(\"привет\"))",
+      "output": "ПРИВЕТ!",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Не знаешь, что умеет модуль, — не гадай, а посмотри. `dir(модуль)` — список имён, `help(модуль.функция)` — короткая справка прямо в терминале, а надёжнее всего — официальная документация."
+    },
+    {
+      "type": "code",
+      "code": "import math\n\nnames = [n for n in dir(math) if not n.startswith(\"_\")]\nprint(sorted(names)[:5])\nprint(\"sqrt\" in names)",
+      "output": "['acos', 'acosh', 'asin', 'asinh', 'atan']\nTrue",
+      "run_check": true
+    },
+    {
+      "type": "table",
+      "header": [
+        "Запись",
+        "Как обращаться",
+        "Когда уместно"
+      ],
+      "rows": [
+        [
+          "import math",
+          "math.sqrt(x)",
+          "по умолчанию — самый явный вариант"
+        ],
+        [
+          "from math import sqrt",
+          "sqrt(x)",
+          "одна-две функции используются часто"
+        ],
+        [
+          "import datetime as dt",
+          "dt.date(...)",
+          "длинное имя, общепринятый алиас"
+        ],
+        [
+          "from math import *",
+          "—",
+          "никогда"
+        ]
+      ]
+    },
+    {
+      "type": "note",
+      "text": "Справочник стандартной библиотеки: docs.python.org/3/library/index.html. Привычка искать ответ там, а не в случайных snippet'ах, — половина профессионализма."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "modules_t1",
+      "title": "Чистим строку чужим модулем",
+      "difficulty": 1,
+      "statement": "Рядом с программой лежит файл `norm.py` с функцией `tidy(text)`, которая нормализует пробелы: оставляет между словами по одному пробелу и убирает края. Программа читает одну строку, вызывает `norm.tidy()` и печатает результат, а второй строкой — его длину. Свою функцию `def` писать нельзя — только импорт.",
+      "input_format": "Одна строка текста.",
+      "output_format": "Две строки: очищенный текст и его длина.",
+      "examples": [
+        {
+          "input": "\"  привет   мир  \"",
+          "output": "привет мир\n10"
+        }
+      ],
+      "hints": [
+        "import norm — и функция доступна как norm.tidy(...).",
+        "Длину считай len() по результату, а не по исходной строке.",
+        "Не пиши свою реализацию split/join: проверка запретит def."
+      ],
+      "tests": [
+        {
+          "input": "  привет   мир  ",
+          "output": "привет мир\n10",
+          "visible": true,
+          "files": {
+            "norm.py": "def tidy(text):\n    return ' '.join(text.split())\n"
+          }
+        },
+        {
+          "input": "один",
+          "output": "один\n4",
+          "files": {
+            "norm.py": "def tidy(text):\n    return ' '.join(text.split())\n"
+          }
+        },
+        {
+          "input": "a\t\tb   c",
+          "output": "a b c\n5",
+          "files": {
+            "norm.py": "def tidy(text):\n    return ' '.join(text.split())\n"
+          }
+        },
+        {
+          "input": "   ",
+          "output": "\n0",
+          "note": "граничный случай: только пробелы",
+          "files": {
+            "norm.py": "def tidy(text):\n    return ' '.join(text.split())\n"
+          }
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "import"
+        ],
+        "must_not_use": [
+          "def"
+        ]
+      },
+      "solution": "import norm\n\nline = input()\nclean = norm.tidy(line)\nprint(clean)\nprint(len(clean))",
+      "wrong_solution": "line = input()\nclean = \" \".join(line.split())\nprint(clean)\nprint(len(line))",
+      "note": "в тестах файл norm.py кладётся автоматически (поле files)"
+    },
+    {
+      "id": "modules_t2",
+      "title": "Фильтр из модуля",
+      "difficulty": 2,
+      "statement": "В файле `grades.py` уже определена функция `above(scores, boundary)` — возвращает список элементов `scores`, строго больших `boundary`. Импортируй её формой `from grades import above`. Программа читает первую строку — оценки через пробел (целые), вторую — границу; печатает отфильтрованные оценки (по одной на строку, в исходном порядке), а затем `всего: K`.",
+      "input_format": "Строка 1 — целые числа через пробел. Строка 2 — целая граница.",
+      "output_format": "Отфильтрованные числа построчно, затем строка `всего: K`.",
+      "examples": [
+        {
+          "input": "3 5 7\n5",
+          "output": "7\nвсего: 1"
+        }
+      ],
+      "hints": [
+        "from grades import above — дальше вызывай просто above(...).",
+        "Числа читай списком: [int(x) for x in input().split()].",
+        "Пустой результат допустим — тогда сразу строка \"всего: 0\"."
+      ],
+      "tests": [
+        {
+          "input": "3 5 7\n5",
+          "output": "7\nвсего: 1",
+          "visible": true,
+          "files": {
+            "grades.py": "def above(scores, boundary):\n    return [s for s in scores if s > boundary]\n"
+          }
+        },
+        {
+          "input": "10 4 8 10\n9",
+          "output": "10\n10\nвсего: 2",
+          "files": {
+            "grades.py": "def above(scores, boundary):\n    return [s for s in scores if s > boundary]\n"
+          }
+        },
+        {
+          "input": "1 2\n10",
+          "output": "всего: 0",
+          "note": "граничный случай: пусто",
+          "files": {
+            "grades.py": "def above(scores, boundary):\n    return [s for s in scores if s > boundary]\n"
+          }
+        },
+        {
+          "input": "-5 0 5\n-6",
+          "output": "-5\n0\n5\nвсего: 3",
+          "files": {
+            "grades.py": "def above(scores, boundary):\n    return [s for s in scores if s > boundary]\n"
+          }
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "above"
+        ]
+      },
+      "solution": "from grades import above\n\nscores = [int(x) for x in input().split()]\nboundary = int(input())\ngood = above(scores, boundary)\nfor s in good:\n    print(s)\nprint(f\"всего: {len(good)}\")",
+      "wrong_solution": "from grades import above\n\nscores = [int(x) for x in input().split()]\nboundary = int(input())\nfor s in scores:\n    if s > boundary:\n        print(s)\nprint(f\"всего: {len(scores)}\")"
+    },
+    {
+      "id": "modules_t3",
+      "title": "Калькулятор с интерфейсом",
+      "difficulty": 2,
+      "statement": "Модуль `calc.py` умеет два действия: `plus(a, b)` и `minus(a, b)`. Программа читает три строки: число a, число b, знак операции (`+` или `-`). Импортируй модуль целиком (`import calc`) и выведи результат нужной функции; для любого другого знака выведи `не знаю`.",
+      "input_format": "Три строки: целое a, целое b, символ операции.",
+      "output_format": "Одна строка — результат или `не знаю`.",
+      "examples": [
+        {
+          "input": "3\n5\n+",
+          "output": "8"
+        }
+      ],
+      "hints": [
+        "import calc, затем calc.plus(a, b) / calc.minus(a, b).",
+        "Ветка else закрывает все прочие знаки.",
+        "Числа целые — int(input())."
+      ],
+      "tests": [
+        {
+          "input": "3\n5\n+",
+          "output": "8",
+          "visible": true,
+          "files": {
+            "calc.py": "def plus(a, b):\n    return a + b\n\n\ndef minus(a, b):\n    return a - b\n"
+          }
+        },
+        {
+          "input": "10\n4\n-",
+          "output": "6",
+          "files": {
+            "calc.py": "def plus(a, b):\n    return a + b\n\n\ndef minus(a, b):\n    return a - b\n"
+          }
+        },
+        {
+          "input": "1\n1\n*",
+          "output": "не знаю",
+          "note": "неизвестная операция",
+          "files": {
+            "calc.py": "def plus(a, b):\n    return a + b\n\n\ndef minus(a, b):\n    return a - b\n"
+          }
+        },
+        {
+          "input": "0\n-5\n+",
+          "output": "-5",
+          "files": {
+            "calc.py": "def plus(a, b):\n    return a + b\n\n\ndef minus(a, b):\n    return a - b\n"
+          }
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "calc"
+        ]
+      },
+      "solution": "import calc\n\na = int(input())\nb = int(input())\nsign = input()\nif sign == \"+\":\n    print(calc.plus(a, b))\nelif sign == \"-\":\n    print(calc.minus(a, b))\nelse:\n    print(\"не знаю\")",
+      "wrong_solution": "import calc\n\na = int(input())\nb = int(input())\nsign = input()\nif sign == \"+\":\n    print(calc.minus(a, b))\nelif sign == \"-\":\n    print(calc.plus(a, b))\nelse:\n    print(\"не знаю\")"
+    },
+    {
+      "id": "modules_t4",
+      "title": "Модуль, который болтает",
+      "difficulty": 3,
+      "statement": "Рядом лежит `greeter.py`: при импорте он печатает свою строку, а потом определяет `hello()`, возвращающую строку-приветствие (тексты могут быть другими!). Напиши программу: импортируй модуль, напечатай строку, которую вернул `hello()`, и вторым числом — её длину. Ничего не зашивай руками: длину считай `len()`. Помни про порядок: строка модуля напечатается раньше твоей, ведь импорт выполняется первой строкой.",
+      "input_format": "Ввода нет.",
+      "output_format": "Две строки после строки, которую напечатал сам модуль: текст приветствия и его длина.",
+      "examples": [
+        {
+          "input": "",
+          "output": "при greeter.py с 'print(\"загрузка модуля\")' и hello() -> 'привет':\nзагрузка модуля\nпривет\n6"
+        }
+      ],
+      "hints": [
+        "result = greeter.hello(); print(result); print(len(result)).",
+        "Не пытайся угадать текст — тесты подсовывают разные модули, работай только через len().",
+        "Функция возвращает (return), а не печатает — печать у тебя."
+      ],
+      "tests": [
+        {
+          "files": {
+            "greeter.py": "print('загрузка модуля')\n\n\ndef hello():\n    return 'привет'\n"
+          },
+          "output": "загрузка модуля\nпривет\n6",
+          "visible": true
+        },
+        {
+          "files": {
+            "greeter.py": "print('gru')\n\n\ndef hello():\n    return 'здравствуй'\n"
+          },
+          "output": "gru\nздравствуй\n10"
+        },
+        {
+          "files": {
+            "greeter.py": "print('модуль загружен: v2')\n\n\ndef hello():\n    return 'привет всем'\n"
+          },
+          "output": "модуль загружен: v2\nпривет всем\n11"
+        },
+        {
+          "files": {
+            "greeter.py": "print('hi')\n\n\ndef hello():\n    return 'хай'\n"
+          },
+          "output": "hi\nхай\n3"
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "import",
+          "len"
+        ]
+      },
+      "solution": "import greeter\n\nresult = greeter.hello()\nprint(result)\nprint(len(result))",
+      "wrong_solution": "import greeter\n\nprint(greeter.hello())"
+    }
+  ],
+  "summary": [
+    "Модуль — файл .py; import выполняет его код и даёт доступ к именам.",
+    "Формы: import math / from math import sqrt / import ... as — выбирай явность.",
+    "Код модуля исполняется при импорте; «самозапуск» прячут под if __name__ == \"__main__\".",
+    "Знакомство с модулем: dir(), help(), docs.python.org/3/library/.",
+    "import * не используется — никогда."
+  ],
+  "further": [
+    "docs.python.org/3/tutorial/modules.html",
+    "Stepik «Поколение Python: курс для продвинутых», модуль «Модули»"
+  ]
+}
