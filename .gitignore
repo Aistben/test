@@ -32,3 +32,6 @@ secrets.*
 *.db
 data/
 downloads/
+
+# --- Локальные проверки ---
+/tmp/
