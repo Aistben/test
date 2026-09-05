@@ -1,0 +1,340 @@
+{
+  "id": "exceptions",
+  "stage": "bridge",
+  "order": 3,
+  "title": "Ошибки и исключения",
+  "subtitle": "Читать traceback и жить спокойно",
+  "minutes": 45,
+  "version": 1,
+  "goals": [
+    "Читать traceback: находить тип ошибки и строку в своём коде",
+    "Оборачивать рискованный код в try/except конкретными типами",
+    "Использовать else, finally и понятное сообщение в except ... as e",
+    "Генерировать свои ошибки через raise и не ловить всё голым except"
+  ],
+  "theory": [
+    {
+      "type": "text",
+      "text": "Исключение (exception) — сигнал Python: «что-то пошло не так, я не могу продолжать». Это не страшно, а полезно: программа сама говорит, где сломалась. Умение читать это сообщение — навык, который экономит часы."
+    },
+    {
+      "type": "code",
+      "code": "Traceback (most recent call last):\n  File \"main.py\", line 2, in <module>\n    n = int(text)\nValueError: invalid literal for int() with base 10: 'abc'",
+      "caption": "Так выглядит падение программы",
+      "allow_invalid": true
+    },
+    {
+      "type": "text",
+      "text": "Traceback читают снизу вверх. Последняя строка — тип ошибки и сообщение: тут `ValueError`, `int()` не смог превратить `'abc'` в число. Строкой выше — место в твоём коде: файл `main.py`, строка 2. Сначала находим строку, потом читаем, о чём говорит тип."
+    },
+    {
+      "type": "text",
+      "text": "Конструкция `try / except` говорит: «попробуй опасный код; если вылетит такой-то тип — не падай, а сделай запасной план». В `except` всегда указывай конкретный тип."
+    },
+    {
+      "type": "code",
+      "code": "raw = input()\ntry:\n    n = int(raw)\n    print(n * 2)\nexcept ValueError:\n    print(\"это не число\")",
+      "input": "abc",
+      "output": "это не число",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Блоков `except` может быть несколько — сработает первый подходящей «ширины». Так `int(\"abc\")` и `5 / 0` требуют разной реакции. Сообщение объекта ошибки доступно через `as e` — удобно, чтобы печатать причину."
+    },
+    {
+      "type": "code",
+      "code": "try:\n    a = int(input())\n    b = int(input())\n    print(a / b)\nexcept ValueError:\n    print(\"нужны числа\")\nexcept ZeroDivisionError:\n    print(\"на ноль делить нельзя\")",
+      "input": "8\n0",
+      "output": "на ноль делить нельзя",
+      "run_check": true
+    },
+    {
+      "type": "warning",
+      "text": "Голый `except:` ловит всё подряд — и опечатку в имени переменной, и Ctrl+C. Программа начинает тихо прятать настоящие баги, и ты их никогда не найдёшь. Правило: лови конкретный тип (`except ValueError:`), максимум — кортеж конкретных типов."
+    },
+    {
+      "type": "text",
+      "text": "`else` выполняется, если в try ошибки НЕ было (логичнее держать «успешный» код там). `finally` выполняется всегда — ошибка или нет: обычно закрывать файлы, соединение, печатать «готово»."
+    },
+    {
+      "type": "code",
+      "code": "prices = {\"хлеб\": 45}\ntry:\n    p = prices[\"молоко\"]\nexcept KeyError:\n    p = 0\nelse:\n    print(\"ключ найден\")\nfinally:\n    print(\"финал — всегда\")\nprint(\"цена:\", p)",
+      "output": "финал — всегда\nцена: 0",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Исключение можно поднять самому — `raise`. Так функция сообщает вызывающему: «ты передал мне ерунду». Хорошее сообщение содержит суть: не `raise ValueError()`, а с текстом."
+    },
+    {
+      "type": "code",
+      "code": "def set_age(age):\n    if age < 0:\n        raise ValueError(\"возраст не может быть отрицательным\")\n    return age\n\n\nprint(set_age(25))",
+      "output": "25",
+      "run_check": true
+    },
+    {
+      "type": "table",
+      "header": [
+        "Исключение",
+        "Откуда берётся",
+        "О чём думать"
+      ],
+      "rows": [
+        [
+          "ValueError",
+          "int(\"abc\"), float(\"1,5\")",
+          "значение неподходящее: пробелы, буквы, запятая вместо точки"
+        ],
+        [
+          "KeyError",
+          "d[\"нет_такого\"]",
+          "ключа в словаре нет: проверь `in` или get()"
+        ],
+        [
+          "IndexError",
+          "[1, 2][5]",
+          "индекс вне диапазона: смотри len() и пустые списки"
+        ],
+        [
+          "ZeroDivisionError",
+          "10 / 0",
+          "делишь на ноль: проверь делитель"
+        ],
+        [
+          "FileNotFoundError",
+          "open(\"nope.txt\")",
+          "файла нет: проверь имя, папку, режим 'w'/'r'"
+        ]
+      ]
+    },
+    {
+      "type": "note",
+      "text": "Алгоритм при падении: 1) прочитать последнюю строку (тип + сообщение); 2) найти в traceback номер своей строки в main.py; 3) воспроизвести на минимальных данных; и только потом — спрашивать. Половина ошибок решается пунктом 1 без гугла."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "exceptions_t1",
+      "title": "Безопасный делитель",
+      "difficulty": 1,
+      "statement": "Программа читает два целых числа (по одному в строке) и печатает их целочастное деление `a // b`. Если что-то из введённого — не число, выведи `ошибка: не число`. Если делитель ноль — выведи `ошибка: на ноль нельзя`. Оформли через try и два разных except.",
+      "input_format": "Две строки: делимое и делитель.",
+      "output_format": "Одна строка: результат деления или сообщение об ошибке.",
+      "examples": [
+        {
+          "input": "10\n3",
+          "output": "3"
+        }
+      ],
+      "hints": [
+        "Весь рискованный код (оба int() и деление) положи внутрь try.",
+        "int() падает с ValueError, деление на ноль — ZeroDivisionError. Нужны два блока except с разными сообщениями.",
+        "Помни про floor-деление: -7 // 2 это -4, не -3."
+      ],
+      "tests": [
+        {
+          "input": "10\n3",
+          "output": "3",
+          "visible": true
+        },
+        {
+          "input": "10\n0",
+          "output": "ошибка: на ноль нельзя"
+        },
+        {
+          "input": "abc\n5",
+          "output": "ошибка: не число"
+        },
+        {
+          "input": "-7\n2",
+          "output": "-4"
+        },
+        {
+          "input": "0\n7",
+          "output": "0"
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "try",
+          "except",
+          "ValueError",
+          "ZeroDivisionError"
+        ]
+      },
+      "solution": "try:\n    a = int(input())\n    b = int(input())\n    print(a // b)\nexcept ValueError:\n    print(\"ошибка: не число\")\nexcept ZeroDivisionError:\n    print(\"ошибка: на ноль нельзя\")",
+      "wrong_solution": "try:\n    a = int(input())\n    b = int(input())\n    print(a // b)\nexcept Exception:\n    print(\"ошибка\")"
+    },
+    {
+      "id": "exceptions_t2",
+      "title": "Ключ из конфига",
+      "difficulty": 2,
+      "statement": "Включи в программу словарь `config = {\"host\": \"localhost\", \"port\": \"8080\", \"debug\": \"off\"}`. Читай одну строку — ключ. Если ключ есть в словаре — напечатай его значение; если его нет — напечатай `нет ключа`. Обращение к словарю оформи через try/except KeyError; метод get() использовать нельзя.",
+      "input_format": "Одна строка — искомый ключ.",
+      "output_format": "Одна строка — значение или `нет ключа`.",
+      "examples": [
+        {
+          "input": "host",
+          "output": "localhost"
+        }
+      ],
+      "hints": [
+        "Ключ, которого нет: config[\"xxx\"] поднимает KeyError — его и лови.",
+        "print(config[key]) внутри try, print(\"нет ключа\") в except KeyError.",
+        "Регистр важен: ключа \"PORT\" в словаре нет."
+      ],
+      "tests": [
+        {
+          "input": "host",
+          "output": "localhost",
+          "visible": true
+        },
+        {
+          "input": "port",
+          "output": "8080"
+        },
+        {
+          "input": "PORT",
+          "output": "нет ключа",
+          "note": "регистр важен"
+        },
+        {
+          "input": "debug",
+          "output": "off"
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "try",
+          "except",
+          "KeyError"
+        ],
+        "must_not_use": [
+          "get"
+        ]
+      },
+      "solution": "config = {\"host\": \"localhost\", \"port\": \"8080\", \"debug\": \"off\"}\nkey = input()\ntry:\n    print(config[key])\nexcept KeyError:\n    print(\"нет ключа\")",
+      "wrong_solution": "config = {\"host\": \"localhost\", \"port\": \"8080\", \"debug\": \"off\"}\nprint(config.get(input(), \"нет ключа\"))"
+    },
+    {
+      "id": "exceptions_t3",
+      "title": "Надёжный парсер",
+      "difficulty": 3,
+      "statement": "В файле `data.txt` лежат строки вида `название;число`, по одной записи на строке. Файл мог «поехать»: встречаются строки без числа, мусор вроде `молоко;абв` и пустые строки. Программа читает файл и считает сумму хороших строк; каждую битую нужно пропустить, а не упасть. В конце выведи две строки: `сумма: S` и `пропущено: K`. Если файла нет — выведи `файла нет` и на этом закончи.",
+      "input_format": "Ввода нет, данные в файле data.txt.",
+      "output_format": "Две строки: `сумма: S` и `пропущено: K`. Если файла нет — одна строка `файла нет`.",
+      "examples": [
+        {
+          "input": "",
+          "output": "данные: 'кофе;150\\nчай;80\\nмолоко;абв\\n\\nсыр;200' -> сумма: 430\\nпропущено: 2"
+        }
+      ],
+      "hints": [
+        "Внешний try/except FileNotFoundError оборачивает open(), внутренний try — разбор одной строки.",
+        "parts = line.split(\";\") — у битой строки не хватит частей (IndexError) или int() упадёт (ValueError): лови оба через except (ValueError, IndexError).",
+        "int(\"150\\n\") работает — перевод строки в конце мешает int редко; split() на ';' оставь как есть."
+      ],
+      "tests": [
+        {
+          "files": {
+            "data.txt": "кофе;150\nчай;80\nмолоко;абв\n\nсыр;200"
+          },
+          "output": "сумма: 430\nпропущено: 2",
+          "visible": true
+        },
+        {
+          "files": {
+            "data.txt": "а;5\nб;-3\nв;1"
+          },
+          "output": "сумма: 3\nпропущено: 0"
+        },
+        {
+          "files": {
+            "data.txt": ""
+          },
+          "output": "сумма: 0\nпропущено: 0",
+          "note": "граничный случай: пустой файл"
+        },
+        {
+          "files": {},
+          "output": "файла нет",
+          "note": "граничный случай: файла нет вообще"
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "try",
+          "except"
+        ]
+      },
+      "solution": "total = 0\nbroken = 0\ntry:\n    with open(\"data.txt\", encoding=\"utf-8\") as f:\n        for line in f:\n            parts = line.split(\";\")\n            try:\n                total += int(parts[1])\n            except (ValueError, IndexError):\n                broken += 1\nexcept FileNotFoundError:\n    print(\"файла нет\")\nelse:\n    print(f\"сумма: {total}\")\n    print(f\"пропущено: {broken}\")",
+      "wrong_solution": "total = 0\nbroken = 0\ntry:\n    with open(\"data.txt\", encoding=\"utf-8\") as f:\n        for line in f:\n            parts = line.split(\";\")\n            total += int(parts[1])\nexcept FileNotFoundError:\n    print(\"файла нет\")\nprint(f\"сумма: {total}\")\nprint(f\"пропущено: {broken}\")"
+    },
+    {
+      "id": "exceptions_t4",
+      "title": "Создатель пользователя",
+      "difficulty": 3,
+      "statement": "Определи функцию `create_user(name, age)`, которая возвращает словарь `{\"name\": name, \"age\": age}`, а на плохие данные поднимает `ValueError` с текстом: имя пустое — сообщение `имя пустое`; возраст меньше 0 или больше 150 — сообщение `возраст от 0 до 150`. Границы 0 и 150 разрешены. Саму функцию не вызывай: проверка сама прогонит список случаев в цикле `try/except ValueError as e` и напечатает либо `ИМЯ: ВОЗРАСТ`, либо `ошибка: ТЕКСТ`.",
+      "input_format": "Ввода нет.",
+      "output_format": "Ничего печатать не нужно — только определить функцию.",
+      "examples": [
+        {
+          "input": "",
+          "output": "для create_user(\"\", 20) проверка напечатает: ошибка: имя пустое"
+        }
+      ],
+      "hints": [
+        "Проверки в начале функции: if not name: raise ValueError(\"имя пустое\").",
+        "Возраст: if age < 0 or age > 150: raise ValueError(\"возраст от 0 до 150\").",
+        "Точный текст сообщения важен — проверка печатает e через `f\"ошибка: {e}\"`."
+      ],
+      "tests": [
+        {
+          "code_before": "cases = [(\"Аня\", 30), (\"\", 20), (\"Боря\", -1), (\"Вера\", 300)]\n",
+          "code_after": "for name, age in cases:\n    try:\n        user = create_user(name, age)\n        print(f\"{user['name']}: {user['age']}\")\n    except ValueError as e:\n        print(f\"ошибка: {e}\")\n",
+          "output": "Аня: 30\nошибка: имя пустое\nошибка: возраст от 0 до 150\nошибка: возраст от 0 до 150",
+          "visible": true
+        },
+        {
+          "code_before": "cases = [(\"Ким\", 150), (\"Лия\", 0)]\n",
+          "code_after": "for name, age in cases:\n    try:\n        user = create_user(name, age)\n        print(f\"{user['name']}: {user['age']}\")\n    except ValueError as e:\n        print(f\"ошибка: {e}\")\n",
+          "output": "Ким: 150\nЛия: 0",
+          "note": "границы допустимы"
+        },
+        {
+          "code_before": "cases = [(\"М\", 151)]\n",
+          "code_after": "for name, age in cases:\n    try:\n        user = create_user(name, age)\n        print(f\"{user['name']}: {user['age']}\")\n    except ValueError as e:\n        print(f\"ошибка: {e}\")\n",
+          "output": "ошибка: возраст от 0 до 150"
+        },
+        {
+          "code_before": "cases = [(\"Н\", 5), (\"\", 5)]\n",
+          "code_after": "for name, age in cases:\n    try:\n        user = create_user(name, age)\n        print(f\"{user['name']}: {user['age']}\")\n    except ValueError as e:\n        print(f\"ошибка: {e}\")\n",
+          "output": "Н: 5\nошибка: имя пустое"
+        }
+      ],
+      "checks": {
+        "must_define": [
+          "create_user"
+        ],
+        "must_use": [
+          "raise",
+          "return"
+        ]
+      },
+      "solution": "def create_user(name, age):\n    if not name:\n        raise ValueError(\"имя пустое\")\n    if age < 0 or age > 150:\n        raise ValueError(\"возраст от 0 до 150\")\n    return {\"name\": name, \"age\": age}",
+      "wrong_solution": "def create_user(name, age):\n    if not name or age < 0 or age > 150:\n        return None\n    return {\"name\": name, \"age\": age}"
+    }
+  ],
+  "summary": [
+    "Traceback читается снизу вверх: тип и сообщение — в конце, твоя строка — выше.",
+    "try/except — не «чтобы не падало», а реакция на конкретный ожидаемый сбой.",
+    "Голый except запрещён: он прячет баги, лови точные типы.",
+    "else — если всё было хорошо, finally — всегда; причина ошибки доступна через as e.",
+    "raise — способ функции сказать «эти данные мне не подходят» понятным текстом."
+  ],
+  "further": [
+    "docs.python.org/3/tutorial/errors.html",
+    "docs.python.org/3/library/exceptions.html — иерархия встроенных исключений"
+  ]
+}
