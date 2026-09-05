@@ -1,8 +1,37 @@
-.DS__Store
+# --- Редакторы и ОС ---
+.DS_Store
 .idea/
-.idea/*
-.vscode
+.vscode/
 *.sublime*
-build/
+
+# --- Node / фронтенд (заготовка сайта) ---
 node_modules/
 npm-debug.*
+build/
+
+# --- Python ---
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Секреты: токены ботов, ключи API, пароли ---
+.env
+.env.*
+*.token
+secrets.*
+
+# --- Данные и выгрузки (большие файлы, результаты парсинга) ---
+*.log
+*.sqlite3
+*.db
+data/
+downloads/
+
+# --- Локальные проверки ---
+/tmp/
