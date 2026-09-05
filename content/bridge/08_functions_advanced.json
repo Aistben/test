@@ -1,0 +1,258 @@
+{
+  "id": "functions_advanced",
+  "stage": "bridge",
+  "order": 8,
+  "title": "Функции: продвинуто и стиль",
+  "subtitle": "*args, kwargs, докстринги и PEP 8",
+  "minutes": 50,
+  "version": 1,
+  "goals": [
+    "Принимать любое количество аргументов через *args и **kwargs",
+    "Вызывать функции по именам параметров и помнить про значения по умолчанию",
+    "Обходить ловушку изменяемого значения по умолчанию (def f(x=[]))",
+    "Писать докстринги, аннотации и код, который не стыдно показать (PEP 8)"
+  ],
+  "theory": [
+    {
+      "type": "text",
+      "text": "Хорошая функция должна быть удобна в вызове. Иногда аргументов фиксированное число, а иногда — сколько дали. Для этого есть звёздочки: `*args` собирает позиционные аргументы в кортеж, `**kwargs` — именованные в словарь."
+    },
+    {
+      "type": "code",
+      "code": "def total(*numbers):\n    return sum(numbers)\n\n\nprint(total(1, 2, 3))\nprint(total())",
+      "output": "6\n0",
+      "run_check": true
+    },
+    {
+      "type": "code",
+      "code": "def user_info(**fields):\n    for key, value in fields.items():\n        print(f\"{key}: {value}\")\n\n\nuser_info(name=\"Аня\", city=\"Казань\")",
+      "output": "name: Аня\ncity: Казань",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Аргументы по имени в ВЫЗОВЕ — второй половины нет в звёздочках: `f(city=\"Сочи\")`. Это не только красота: порядок не важен, а код вызова читается как предложение. Значения по умолчанию позволяют опускать второстепенное."
+    },
+    {
+      "type": "code",
+      "code": "def delivery(city, days=3, express=False):\n    label = \"экспресс\" if express else \"обычная\"\n    print(f\"{city}: {days} дн., {label}\")\n\n\ndelivery(\"Сочи\", express=True)\ndelivery(\"Псков\", 5)",
+      "output": "Сочи: 3 дн., экспресс\nПсков: 5 дн., обычная",
+      "run_check": true
+    },
+    {
+      "type": "warning",
+      "text": "Значение по умолчанию вычисляется ОДИН раз — при определении функции. Список в параметре (`def f(items=[])`) живёт между вызовами: в него складывается со второго вызова, и «чистый» список оказывается чужим. Признак ошибки: второй вызов функции ведёт себя не так, как первый."
+    },
+    {
+      "type": "code",
+      "code": "def add(item, basket=[]):\n    basket.append(item)\n    return basket\n\n\nprint(add(\"хлеб\"))\nprint(add(\"молоко\"))  # список из прошлого вызова не испарился!",
+      "output": "['хлеб']\n['хлеб', 'молоко']",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Лекарство от этой ловушки — `None` в параметре и создание списка ВНУТРИ функции."
+    },
+    {
+      "type": "code",
+      "code": "def add(item, basket=None):\n    if basket is None:\n        basket = []\n    basket.append(item)\n    return basket\n\n\nprint(add(\"хлеб\"))\nprint(add(\"молоко\"))",
+      "output": "['хлеб']\n['молоко']",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Докстринг — первая строка внутри функции в тройных кавычках: что функция делает. Его видно через help(). Аннотации типов (`x: int`, `-> float`) — подсказка человеку и редактору; Python их НЕ проверяет, но по ним читают твой код."
+    },
+    {
+      "type": "code",
+      "code": "def celsius_to_fahrenheit(c: float) -> float:\n    \"\"\"Переводит температуру из Цельсия в Фаренгейт.\"\"\"\n    return c * 9 / 5 + 32\n\n\nprint(celsius_to_fahrenheit(100))\nprint(celsius_to_fahrenheit.__doc__)",
+      "output": "212.0\nПереводит температуру из Цельсия в Фаренгейт.",
+      "run_check": true
+    },
+    {
+      "type": "list",
+      "title": "PEP 8, минимум который реально используется",
+      "items": [
+        "отступы — 4 пробела; табы не мешать с пробелами;",
+        "функции и переменные — `snake_case`, константы — `UPPER_CASE`, классы — `CamelCase`;",
+        "пробелы вокруг `=` и операторов, но не внутри скобок: `f(a, b)`, не `f( a,b )`;",
+        "длина строки — 79 символов (на практике часто 88), переноси внутри скобок;",
+        "между функциями — 2 пустые строки, внутри класса между методами — 1;",
+        "комментарий объясняет ПОЧЕМУ, а не ЧТО: `# 200 = тариф доставки, руб`."
+      ]
+    },
+    {
+      "type": "compare",
+      "title": "Одна функция — одно дело",
+      "bad": "def process(path):\n    # читает файл, чистит данные,\n    # печатает отчёт и сохраняет результат\n    ...",
+      "good": "def load(path):\n    ...\n\n\ndef clean(rows):\n    ...\n\n\ndef save_report(rows, path):\n    ..."
+    },
+    {
+      "type": "note",
+      "text": "Если описание функции начинается со слова «и» («считает И сохраняет») — это две функции. Разделение видно по длине: функция, которая не помещается на экран с комментариями, почти всегда склеена из нескольких дел."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "functions_advanced_t1",
+      "title": "Приветствие с параметром",
+      "difficulty": 1,
+      "statement": "Определи функцию `greet(name, greeting=\"Привет\")`, которая возвращает строку `greeting, name!` (запятая, пробел, восклицательный в конце). Именно возвращает — не печатает. Проверка вызовет функцию с одним аргументом, с двумя позиционными и только по именам.",
+      "input_format": "Ввода нет.",
+      "output_format": "Ничего печатать не нужно — только определить функцию.",
+      "examples": [
+        {
+          "input": "",
+          "output": "print(greet(\"Аня\")) -> Привет, Аня!"
+        }
+      ],
+      "hints": [
+        "Значение по умолчанию пишется в def: greeting=\"Привет\".",
+        "f-строка: return f\"{greeting}, {name}!\".",
+        "Вызов greet(name=\"Глеб\", greeting=\"Привет\") должен работать — параметры обычные, именованный вызов умеет Python."
+      ],
+      "tests": [
+        {
+          "code_after": "print(greet(\"Аня\"))",
+          "output": "Привет, Аня!",
+          "visible": true
+        },
+        {
+          "code_after": "print(greet(\"Борис\", \"Доброе утро\"))",
+          "output": "Доброе утро, Борис!"
+        },
+        {
+          "code_after": "print(greet(\"Вера\", greeting=\"Спокойной ночи\"))",
+          "output": "Спокойной ночи, Вера!",
+          "note": "только именованный"
+        },
+        {
+          "code_after": "print(greet(name=\"Глеб\"))",
+          "output": "Привет, Глеб!"
+        }
+      ],
+      "checks": {
+        "must_define": [
+          "greet"
+        ]
+      },
+      "solution": "def greet(name, greeting=\"Привет\"):\n    \"\"\"Возвращает приветствие: greeting, name!\"\"\"\n    return f\"{greeting}, {name}!\"",
+      "wrong_solution": "def greet(name, greeting=\"Здравствуй\"):\n    return f\"{greeting}, {name}!\""
+    },
+    {
+      "id": "functions_advanced_t2",
+      "title": "Среднее любого числа аргументов",
+      "difficulty": 2,
+      "statement": "Определи функцию `average(*numbers)`, которая принимает любое количество чисел и возвращает их среднее арифметическое (float). Если чисел не передано — возвращает 0.0. Саму функцию вызывать не нужно: проверка вызовет её сама.",
+      "input_format": "Ввода нет.",
+      "output_format": "Ничего печатать не нужно — только определить функцию.",
+      "examples": [
+        {
+          "input": "",
+          "output": "average(2, 4) -> 3.0"
+        }
+      ],
+      "hints": [
+        "Звёздочка в параметре собирает все аргументы в кортеж: def average(*numbers).",
+        "Проверь пустой кортеж до деления: if not numbers: return 0.0.",
+        "sum(numbers) / len(numbers)."
+      ],
+      "tests": [
+        {
+          "code_after": "print(average(2, 4))",
+          "output": "3.0",
+          "visible": true
+        },
+        {
+          "code_after": "print(average(10))",
+          "output": "10.0"
+        },
+        {
+          "code_after": "print(average())",
+          "output": "0.0",
+          "note": "пустой вызов"
+        },
+        {
+          "code_after": "print(round(average(1, 2, 2), 2))",
+          "output": "1.67"
+        },
+        {
+          "code_after": "print(average(-3, 3))",
+          "output": "0.0"
+        }
+      ],
+      "checks": {
+        "must_define": [
+          "average"
+        ],
+        "must_use": [
+          "*"
+        ]
+      },
+      "solution": "def average(*numbers):\n    if not numbers:\n        return 0.0\n    return sum(numbers) / len(numbers)",
+      "wrong_solution": "def average(*numbers):\n    return sum(numbers) / len(numbers)"
+    },
+    {
+      "id": "functions_advanced_t3",
+      "title": "Конструктор отчётов",
+      "difficulty": 3,
+      "statement": "Определи функцию `make_report(title, *rows, footer=None, indent=\"  \")`. Она ВОЗВРАЩАЕТ одну строку текста: сначала title, затем каждая строка из rows с префиксом indent, последней строкой — footer, а если footer не передан — символ `—` (тире). Разделитель строк — перевод строки \\n. Индент по умолчанию — два пробела. Проверка вызовет make_report с разным набором именованных аргументов и напечатает результат через print().",
+      "input_format": "Ввода нет.",
+      "output_format": "Ничего печатать не нужно — только определить функцию, возвращающую строку.",
+      "examples": [
+        {
+          "input": "",
+          "output": "print(make_report(\"Отчёт\", \"a\", \"b\")) ->\nОтчёт\n  a\n  b\n—"
+        }
+      ],
+      "hints": [
+        "Порядок параметров: сначала обычный title, затем *rows, затем только именованные с дефолтами (Python требует: после *args без дефолтных позиционных уже нет).",
+        "Собери список строк: lines = [title], потом lines.append(indent + row), потом footer if footer is not None else \"—\".",
+        "Отдай результат: return \"\\n\".join(lines)."
+      ],
+      "tests": [
+        {
+          "code_after": "print(make_report(\"Отчёт\", \"a\", \"b\"))",
+          "output": "Отчёт\n  a\n  b\n—",
+          "visible": true
+        },
+        {
+          "code_after": "print(make_report(\"Топ\", \"x\", footer=\"Итого: 1\"))",
+          "output": "Топ\n  x\nИтого: 1",
+          "note": "footer только по имени"
+        },
+        {
+          "code_after": "print(make_report(\"Пусто\"))",
+          "output": "Пусто\n—",
+          "note": "граничный случай: нет строк отчёта"
+        },
+        {
+          "code_after": "print(make_report(\"Ш\", \"y\", indent=\">>\"))",
+          "output": "Ш\n>>y\n—",
+          "note": "свой отступ"
+        }
+      ],
+      "checks": {
+        "must_define": [
+          "make_report"
+        ],
+        "must_use": [
+          "*"
+        ]
+      },
+      "solution": "def make_report(title, *rows, footer=None, indent=\"  \"):\n    lines = [title]\n    for row in rows:\n        lines.append(indent + row)\n    lines.append(footer if footer is not None else \"—\")\n    return \"\\n\".join(lines)",
+      "wrong_solution": "def make_report(title, *rows, footer=None, indent=\"  \"):\n    lines = [title]\n    for row in rows:\n        lines.append(row)\n    lines.append(footer if footer is not None else \"—\")\n    return \"\\n\".join(lines)"
+    }
+  ],
+  "summary": [
+    "*args — кортеж лишних позиционных, **kwargs — словарь именованных; после * — только дефолтные-именованные.",
+    "Вызов по именам (f(city=\"Сочи\")) читается сам и освобождает от порядка аргументов.",
+    "Никогда не список/словарь как значение по умолчанию — ставь None и создавай внутри.",
+    "Докстринг — первая строка функции; аннотации x: int, -> float — подсказка, которую Python не проверяет.",
+    "PEP 8 — не эстетика: чужой код читают люди, а функция делает одно дело."
+  ],
+  "further": [
+    "PEP 8 (pycodestyle): docs.python.org/3/tutorial/appendix.html",
+    "PEP 257 — соглашение о докстрингах"
+  ]
+}
