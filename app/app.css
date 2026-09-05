@@ -455,3 +455,31 @@ details.hints li .inline-code { background: rgba(255, 255, 255, 0.06); color: #f
   .lesson-head h2 { font-size: 26px; }
   .fmt, .two-cols, .task .examples .ex, .test-row .t-diff { grid-template-columns: 1fr; }
 }
+
+/* ---------- v3: запуск по примеру, эталон, замки ---------- */
+.io-box { margin-top: 12px; }
+.io-box label {
+  display: block; font-size: 10.5px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 5px;
+}
+.io-box textarea.stdin {
+  width: 100%; resize: vertical; padding: 9px 13px; background: var(--bg-code);
+  color: #cfe0f5; border: 1px dashed var(--bd-strong); border-radius: 10px;
+  font: 13px/1.5 var(--mono); outline: none;
+}
+.io-box textarea.stdin:focus { border-style: solid; border-color: var(--accent); }
+.runout .out-label {
+  font-size: 10.5px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 1.2px; margin: 10px 0 -6px;
+}
+.solution-box {
+  margin-top: 8px; border: 1px solid var(--bd); border-radius: 12px;
+  overflow: hidden; background: var(--bg-code);
+}
+.solution-box .tiny-btn { margin: 8px 10px; }
+.solution-box pre {
+  margin: 0; padding: 12px 16px; overflow-x: auto;
+  font: 13.5px/1.6 var(--mono); border-top: 1px solid var(--bd); color: #dce7f5;
+}
+.lesson-item.locked { cursor: not-allowed; }
+.lesson-item.locked:hover { background: none; }

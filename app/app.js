@@ -38,6 +38,11 @@ const store = (() => {
       clearTimeout(timer); timer = setTimeout(save, 350);
     },
     reset: () => { data = { done: {}, drafts: {} }; save(); },
+    snapshot: () => data,
+    restore: (obj) => {
+      if (obj && typeof obj === "object" && obj.done && obj.drafts) { data = obj; save(); return true; }
+      return false;
+    },
   };
   function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch (e) { /* приватный режим */ } }
 })();
@@ -47,6 +52,13 @@ DATA.stages.forEach(st => st.lessons.forEach(ls => {
   ls.data.tasks.forEach(t => ALL_TASKS.push({ stage: st, lesson: ls, task: t }));
 }));
 const doneCount = () => ALL_TASKS.filter(x => store.isDone(x.lesson.data.id, x.task.id)).length;
+
+const CORE = window.PypathCore;
+if (!CORE) throw new Error("app/core.js не подключён");
+const FLAT = CORE.makeIndex(DATA.stages);
+const isDone = (lid, tid) => store.isDone(lid, tid);
+const unlockedFlags = () => CORE.unlockedFlags(FLAT, isDone);
+const flatPos = () => FLAT.findIndex((x) => x.si === state.stage && x.li === state.lesson);
 
 const state = { stage: 0, lesson: 0, view: "lesson", py: { status: "idle" } };
 
@@ -96,18 +108,28 @@ function renderSidebar() {
     '<div class="txt"><span>решено задач</span><span>' + done + " / " + total + "</span></div>";
   side.appendChild(ov);
 
+  const flags = unlockedFlags();
+  let fi = -1;
   DATA.stages.forEach((st, si) => {
     side.appendChild(el("div", "stage-title", esc(st.title)));
     st.lessons.forEach((ls, li) => {
+      fi++;
       const d = ls.data;
       const nDone = d.tasks.filter(t => store.isDone(d.id, t.id)).length;
+      const isCur = state.view === "lesson" && state.stage === si && state.lesson === li;
       const btn = el("button", "lesson-item" + (nDone === d.tasks.length ? " complete" : ""));
-      if (state.view === "lesson" && state.stage === si && state.lesson === li) btn.classList.add("active");
+      if (isCur) btn.classList.add("active");
       btn.innerHTML =
-        '<span class="num">' + (nDone === d.tasks.length ? "✓" : d.order) + "</span>" +
+        '<span class="num">' + (nDone === d.tasks.length ? "✓" : (flags[fi] ? d.order : "🔒")) + "</span>" +
         '<span class="name">' + esc(d.title) + "</span>" +
         '<span class="frac">' + nDone + "/" + d.tasks.length + "</span>";
-      btn.onclick = () => { state.view = "lesson"; state.stage = si; state.lesson = li; render(); closeNav(); };
+      if (!flags[fi] && !isCur) {
+        btn.classList.add("locked");
+        btn.title = "Откроется, когда пройдёшь предыдущую тему";
+        btn.onclick = () => toast("Тема закрыта: реши все задачи предыдущей темы");
+      } else {
+        btn.onclick = () => { state.view = "lesson"; state.stage = si; state.lesson = li; render(); closeNav(); };
+      }
       side.appendChild(btn);
     });
   });
@@ -122,6 +144,35 @@ function renderSidebar() {
     if (confirm("Сбросить отметки о решённых задачах и все черновики кода?")) { store.reset(); render(); }
   };
   foot.appendChild(reset);
+  const exp = el("button", "side-btn", "⬇ экспорт прогресса (.json)");
+  exp.onclick = () => {
+    const blob = new Blob([JSON.stringify({ app: "pypath", v: 1, ...store.snapshot() }, null, 1)],
+      { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "pypath-progress.json";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  };
+  foot.appendChild(exp);
+  const imp = el("button", "side-btn", "⬆ импорт прогресса из файла");
+  imp.onclick = () => {
+    const inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = ".json,application/json";
+    inp.onchange = () => {
+      const f = inp.files && inp.files[0];
+      if (!f) return;
+      f.text().then((t) => {
+        let obj = null;
+        try { obj = JSON.parse(t); } catch (e) { obj = null; }
+        if (obj && store.restore(obj)) { render(); toast("Прогресс загружен"); }
+        else toast("Не похоже на бэкап pypath-progress.json");
+      });
+    };
+    inp.click();
+  };
+  foot.appendChild(imp);
   const fresh = el("button", "side-btn", "🧹 жёсткая перезагрузка (без кэша)");
   fresh.title = "Перезагрузить app.css, app.js и data.js минуя кэш браузера";
   fresh.onclick = hardReload;
@@ -136,7 +187,7 @@ function renderSidebar() {
 async function hardReload() {
   // обновляем кэш HTTP принудительно, затем обычный reload — он возьмёт свежие файлы
   try {
-    await Promise.all(["app/app.css", "app/app.js", "app/data.js"].map(
+    await Promise.all(["app/app.css", "app/core.js", "app/app.js", "app/data.js"].map(
       (u) => fetch(u, { cache: "reload" }).catch(() => null)));
   } catch (e) { /* file:// — fetch может быть недоступен, перезагрузка всё равно поможет */ }
   location.reload();
@@ -285,15 +336,29 @@ function renderTask(lessonData, task, idx) {
   editor.appendChild(ta);
   card.appendChild(editor);
 
+  const visTest = (task.tests || []).find((t) => t.visible) || (task.tests || [])[0] || {};
+  const ioBox = el("div", "io-box");
+  const ioLabel = el("label", null, "ввод программы для «Запустить» (как если бы ученик напечатал с клавиатуры)");
+  const stdinTa = document.createElement("textarea");
+  stdinTa.className = "stdin";
+  stdinTa.rows = 2;
+  stdinTa.placeholder = "— ввод не нужен —";
+  stdinTa.value = visTest.input || "";
+  ioBox.append(ioLabel, stdinTa);
+  card.appendChild(ioBox);
+
   const actions = el("div", "task-actions");
   const checkBtn = el("button", "btn primary", "Проверить");
-  const runBtn = el("button", "btn ghost", "▶ Запустить");
+  const runBtn = el("button", "btn ghost", "▶ Запустить на примере");
+  if (task.tests && task.tests.some((t) => t.code_before || t.code_after)) {
+    runBtn.title = "Задача проверяется вызовом твоей функции — нажми «Проверить»";
+  } else if (visTest.files) {
+    runBtn.title = "Файлы из visible-теста будут созданы в песочнице запуска";
+  }
   actions.append(checkBtn, runBtn, el("span", "kbd", "Ctrl + Enter — проверить"));
   const out = el("div", "results");
   actions.appendChild(out);
 
-  const needsFiles = (task.tests || []).some(t => t.files || t.code_before || t.code_after);
-  if (needsFiles) runBtn.title = "В задаче участвуют тестовые файлы/проверочный код — используй «Проверить»";
   checkBtn.onclick = doCheck;
   runBtn.onclick = () => doRun(ta.value);
   card.append(actions, out);
@@ -313,7 +378,11 @@ function renderTask(lessonData, task, idx) {
           if (!head.querySelector(".done-badge")) head.appendChild(el("span", "done-badge", "✓ решено"));
           card.classList.add("done-task");
           celebrate(task, idx, out);
+          showSolutionBox(out, task);
           renderSidebar();
+          maybeAdvanceLesson(lessonData);
+        } else if (res.passed) {
+          showSolutionBox(out, task);
         }
       } catch (e) {
         out.innerHTML = '<div class="verdict fail">Сбой проверки: ' + esc(String(e)) + "</div>";
@@ -323,11 +392,21 @@ function renderTask(lessonData, task, idx) {
 
   function doRun(code) {
     if (state.py.status !== "ready") { ensurePy(); return toast("Python ещё грузится"); }
+    const opts = {};
+    if (visTest.files) opts.files = visTest.files;
+    const want = Object.keys(visTest.output_files || {});
+    if (want.length) opts.want_files = want;
     try {
-      const res = callRun(code, "");
+      const res = callRun(code, stdinTa.value, opts);
       const runBox = el("div", "runout");
       if (res.ok) {
-        runBox.innerHTML = "<pre>" + (res.stdout ? esc(res.stdout.replace(/\n$/, "")) : "— программа ничего не напечатала —") + "</pre>";
+        let html = "<pre>" + (res.stdout ? esc(res.stdout.replace(/\n$/, "")) : "— программа ничего не напечатала —") + "</pre>";
+        for (const fname of Object.keys(res.files || {})) {
+          const body = res.files[fname];
+          html += '<div class="out-label">файл ' + esc(fname) + ":</div><pre>" +
+            (body == null ? "— не создан —" : esc(body)) + "</pre>";
+        }
+        runBox.innerHTML = html;
       } else {
         runBox.innerHTML = '<pre class="rerr">' + esc(res.error || "ошибка") + "</pre>" +
           (res.friendly ? '<div class="rfriendly">' + esc(res.friendly) + "</div>" : "");
@@ -519,8 +598,39 @@ function ensurePy() {
 }
 
 function renderBootPills() { document.querySelectorAll(".bootpill").forEach(n => n.replaceWith(bootPill())); }
-function callRun(code, stdin) {
-  return JSON.parse(state.py.run(code, stdin || "", JSON.stringify({ echo_prompts: true })));
+function callRun(code, stdin, opts) {
+  const o = Object.assign({ echo_prompts: true }, opts || {});
+  return JSON.parse(state.py.run(code, stdin || "", JSON.stringify(o)));
+}
+
+function showSolutionBox(out, task) {
+  if (!task.solution || out.querySelector(".solution-box")) return;
+  const box = el("div", "solution-box");
+  const btn = el("button", "tiny-btn", "👀 эталонное решение — сравни со своим");
+  const pre = document.createElement("pre");
+  pre.innerHTML = "<code>" + highlightPy(task.solution) + "</code>";
+  pre.style.display = "none";
+  btn.onclick = () => { pre.style.display = pre.style.display === "none" ? "block" : "none"; };
+  box.append(btn, pre);
+  out.appendChild(box);
+}
+
+/* Урок засчитан (все задачи решены) → открываем следующую тему. */
+function maybeAdvanceLesson(lessonData) {
+  const pos = flatPos();
+  if (pos < 0 || FLAT[pos].id !== lessonData.id) return;
+  if (!CORE.lessonComplete(FLAT[pos], isDone)) return;
+  const next = CORE.nextLesson(FLAT, isDone, pos);
+  if (next < 0) { toast("Это была последняя открытая тема — всё решено 🎓"); return; }
+  const nx = DATA.stages[FLAT[next].si].lessons[FLAT[next].li].data;
+  toast("Тема «" + lessonData.title + "» пройдена → открываю «" + nx.title + "»");
+  setTimeout(() => {
+    if (state.view !== "lesson" || flatPos() !== pos) return;
+    state.stage = FLAT[next].si;
+    state.lesson = FLAT[next].li;
+    render();
+    window.scrollTo(0, 0);
+  }, 1800);
 }
 
 /* ---------- мелочи ---------- */

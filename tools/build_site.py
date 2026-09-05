@@ -38,7 +38,7 @@ def stamp_assets():
     import re
 
     h = hashlib.sha256()
-    for p in ("app/app.css", "app/app.js", "app/data.js"):
+    for p in ("app/app.css", "app/core.js", "app/app.js", "app/data.js"):
         with open(os.path.join(ROOT, p), "rb") as f:
             h.update(f.read())
     ver = h.hexdigest()[:10]
@@ -47,7 +47,7 @@ def stamp_assets():
     html = read(path)
     html = re.sub(r'(<link rel="stylesheet" href="app/app\.css)(?:\?v=[0-9a-f]+)?(")',
                   rf"\1?v={ver}\2", html)
-    html = re.sub(r'(<script src="app/(?:data|app)\.js)(?:\?v=[0-9a-f]+)?(")',
+    html = re.sub(r'(<script src="app/(?:core|data|app)\.js)(?:\?v=[0-9a-f]+)?(")',
                   rf"\1?v={ver}\2", html)
     with open(path, "w", encoding="utf-8") as f:
         f.write(html)
@@ -91,10 +91,46 @@ def main():
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(js)
 
+    make_standalone()
     ver = stamp_assets()
     size = len(js.encode("utf-8")) // 1024
     print(f"data.js: {size} КБ, уроков: {n_lessons}, этап(ов): {len(stages)}, версия ассетов: {ver}")
 
+
+
+
+def make_standalone():
+    """pypath.html — всё приложение в одном файле (стили+ядро+данные+логика).
+    Можно скинуть на флешку/телефон и открыть двойным кликом где угодно.
+    Интернет нужен только при первом запуске: Pyodide (~10 МБ) грузится с CDN."""
+    css = read(os.path.join(ROOT, "app", "app.css"))
+    js = "\n".join(read(os.path.join(ROOT, "app", p))
+                   for p in ("core.js", "data.js", "app.js"))
+    js = js.replace("</script", "<\\/script")  # </script> внутри строк ломал бы тег
+    html = f"""<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python: Основы и Мостик — тренажёр (один файл)</title>
+<style>
+{css}
+</style>
+</head>
+<body>
+<div id="app" class="layout">
+  <button id="burger" aria-label="Меню">☰</button>
+  <aside id="sidebar"></aside>
+  <main id="main"></main>
+</div>
+<script>
+{js}
+</script>
+</body>
+</html>
+"""
+    with open(os.path.join(ROOT, "pypath.html"), "w", encoding="utf-8") as f:
+        f.write(html)
 
 if __name__ == "__main__":
     main()
