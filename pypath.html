@@ -1,3 +1,555 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python: Основы и Мостик — тренажёр (один файл)</title>
+<style>
+/* ============================================================
+   pypath-тренажёр — тёмная тема «глубокая ночь».
+   Один контраст-режим: ничего не переключается от системы,
+   светлых «дыр» под текстом нет по построению.
+   ============================================================ */
+:root {
+  --bg:        #0a0f18;   /* фон страницы */
+  --bg-side:   #0d1421;   /* фон сайдбара */
+  --bg-card:   #111a2a;   /* карточки */
+  --bg-card2:  #16223a;   /* карточки внутри карточек */
+  --bg-code:   #070c14;   /* фон кода */
+  --bg-chip:   rgba(96, 154, 255, 0.10);
+  --bd:        rgba(120, 160, 220, 0.14);
+  --bd-strong: rgba(120, 160, 220, 0.30);
+  --text:      #e7eef8;
+  --text-dim:  #a5b3c7;
+  --muted:     #7a8aa3;
+  --accent:    #58a6ff;
+  --accent-deep:#1f6feb;
+  --gold:      #e3b341;
+  --ok:        #4ac26b;
+  --err:       #ff7b72;
+  --ok-bg:     rgba(74, 194, 107, 0.10);
+  --ok-bd:     rgba(74, 194, 107, 0.35);
+  --err-bg:    rgba(255, 123, 114, 0.08);
+  --err-bd:    rgba(255, 123, 114, 0.35);
+  --warn-bg:   rgba(227, 179, 65, 0.08);
+  --warn-bd:   rgba(227, 179, 65, 0.35);
+  /* синтаксис */
+  --syn-kw:  #ff7b72;
+  --syn-str: #9ece6a;
+  --syn-com: #67768f;
+  --syn-num: #79c0ff;
+  --syn-bi:  #d2a8ff;
+  --mono: ui-monospace, "Cascadia Code", "JetBrains Mono", "Fira Code", Consolas, monospace;
+  --sans: -apple-system, "Segoe UI", Roboto, "Inter", "Helvetica Neue", Arial, sans-serif;
+  --shadow: 0 10px 34px rgba(0, 0, 0, 0.42);
+  --r: 14px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font: 16px/1.65 var(--sans);
+  background:
+    radial-gradient(1200px 500px at 85% -10%, rgba(31, 111, 235, 0.13), transparent 60%),
+    radial-gradient(900px 420px at -10% 110%, rgba(227, 179, 65, 0.05), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  scrollbar-color: var(--bd-strong) transparent;
+}
+::selection { background: rgba(88, 166, 255, 0.35); }
+a { color: var(--accent); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--bd-strong); border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+.layout { display: flex; min-height: 100vh; }
+
+/* ---------------- sidebar ---------------- */
+#sidebar {
+  width: 300px; flex-shrink: 0; background: var(--bg-side);
+  border-right: 1px solid var(--bd); padding: 20px 14px 26px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.brand { display: flex; align-items: center; gap: 11px; padding: 2px 8px 16px; }
+.brand .logo {
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  background: linear-gradient(140deg, #1f6feb 10%, #58a6ff 55%, #e3b341 120%);
+  display: grid; place-items: center; font-size: 21px;
+  box-shadow: 0 4px 18px rgba(31, 111, 235, 0.35);
+}
+.brand h1 { font-size: 16.5px; margin: 0; letter-spacing: 0.2px; font-weight: 700; }
+.brand small { color: var(--muted); font-size: 11.5px; letter-spacing: 0.4px; }
+
+.overall { margin: 4px 8px 16px; }
+.overall .bar, .lessonprog .bar {
+  height: 7px; border-radius: 6px; background: rgba(255, 255, 255, 0.06); overflow: hidden;
+}
+.overall .fill, .lessonprog .fill {
+  height: 100%; border-radius: 6px;
+  background: linear-gradient(90deg, var(--accent-deep), var(--accent) 55%, var(--ok));
+  box-shadow: 0 0 12px rgba(88, 166, 255, 0.45);
+  transition: width 0.4s ease;
+}
+.overall .txt {
+  font-size: 12.5px; color: var(--text-dim); margin-top: 6px;
+  display: flex; justify-content: space-between; font-variant-numeric: tabular-nums;
+}
+
+.stage-title {
+  font-size: 11.5px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--muted); margin: 20px 10px 8px; font-weight: 700;
+}
+.lesson-item {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  padding: 9px 11px; border-radius: 11px; border: 1px solid transparent; background: none;
+  color: var(--text-dim); font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.lesson-item:hover { background: rgba(255, 255, 255, 0.045); color: var(--text); }
+.lesson-item.active {
+  background: linear-gradient(90deg, rgba(31, 111, 235, 0.22), rgba(31, 111, 235, 0.07));
+  border-color: rgba(88, 166, 255, 0.35); color: var(--text);
+}
+.lesson-item .num { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; min-width: 16px; }
+.lesson-item.complete .num { color: var(--ok); }
+.lesson-item .name { flex: 1; font-size: 13.5px; line-height: 1.35; }
+.lesson-item .frac {
+  font-size: 11px; color: var(--muted); background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--bd); padding: 2px 8px; border-radius: 99px;
+  font-variant-numeric: tabular-nums;
+}
+.lesson-item.complete .frac { color: var(--ok); background: var(--ok-bg); border-color: var(--ok-bd); }
+.lesson-item.locked { opacity: 0.45; }
+
+.side-foot { margin-top: 22px; padding: 0 4px; display: flex; flex-direction: column; gap: 7px; }
+.side-btn {
+  border: 1px solid var(--bd); background: transparent; color: var(--text-dim);
+  padding: 8px 11px; border-radius: 10px; font: inherit; font-size: 13px; cursor: pointer;
+  text-align: left; transition: border-color 0.15s, color 0.15s;
+}
+.side-btn:hover { color: var(--text); border-color: var(--bd-strong); }
+.side-btn.active { color: var(--text); border-color: var(--accent); background: rgba(31, 111, 235, 0.12); }
+
+/* ---------------- main ---------------- */
+#main { flex: 1; min-width: 0; padding: 30px clamp(18px, 4.5vw, 60px) 90px; max-width: 1060px; }
+
+.lesson-head { margin-bottom: 24px; }
+.lesson-head .kicker {
+  color: var(--accent); font-size: 12px; text-transform: uppercase;
+  letter-spacing: 2px; font-weight: 700;
+}
+.lesson-head h2 {
+  font-size: 32px; margin: 8px 0 6px; line-height: 1.18; font-weight: 800;
+  letter-spacing: -0.3px;
+  background: linear-gradient(90deg, #f2f7ff 30%, #9cc6ff 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.lesson-head .sub { color: var(--text-dim); font-size: 16px; margin: 0 0 12px; }
+.lesson-head .meta {
+  display: flex; gap: 16px; color: var(--muted); font-size: 13px;
+  align-items: center; flex-wrap: wrap;
+}
+.lessonprog { flex: 1; min-width: 120px; max-width: 260px; }
+
+.goals {
+  background: var(--bg-card); border: 1px solid var(--bd); border-radius: var(--r);
+  padding: 14px 20px 10px; margin: 18px 0 30px;
+}
+.goals b {
+  font-size: 12px; color: var(--gold); text-transform: uppercase;
+  letter-spacing: 1.4px; font-weight: 800;
+}
+.goals ul { margin: 8px 0 8px; padding-left: 22px; }
+.goals li { margin: 5px 0; color: var(--text-dim); }
+.goals li::marker { color: var(--accent); }
+
+h3.block-h {
+  font-size: 21px; margin: 40px 0 12px; letter-spacing: -0.2px; font-weight: 750;
+  display: flex; align-items: center; gap: 10px;
+}
+h3.block-h::after { content: ""; flex: 1; height: 1px; background: var(--bd); }
+
+/* ---------------- теория ---------------- */
+.theory p { margin: 12px 0; max-width: 72ch; color: #dbe6f5; }
+.theory { font-size: 16px; }
+
+/* инлайн-«чипы» кода — ТОЛЬКО класс inline-code (md() их ставит);
+   так <code> внутри <pre> больше не получает светлой подложки */
+.inline-code {
+  background: var(--bg-chip); border: 1px solid rgba(88, 166, 255, 0.22); border-radius: 6px;
+  padding: 1.5px 6px; font-size: 0.86em; color: #b8d4ff;
+  font-family: var(--mono);
+}
+.theory pre code, .codeblock pre code, .two-cols pre code {
+  background: none !important; border: 0 !important; padding: 0 !important;
+  color: inherit; font-size: inherit;
+}
+
+.callout {
+  border-radius: 12px; padding: 12px 16px; margin: 16px 0; max-width: 74ch;
+  border: 1px solid; font-size: 15px; line-height: 1.6;
+}
+.callout.note {
+  background: var(--ok-bg); border-color: var(--ok-bd);
+  border-left: 3px solid var(--ok); color: #d7f2df;
+}
+.callout.warning {
+  background: var(--warn-bg); border-color: var(--warn-bd);
+  border-left: 3px solid var(--gold); color: #f4e6c1;
+}
+.callout .ico { margin-right: 6px; }
+.callout .inline-code { background: rgba(255, 255, 255, 0.07); }
+
+/* блоки кода */
+.codeblock {
+  background: var(--bg-code); border: 1px solid var(--bd); border-radius: 12px;
+  margin: 16px 0; box-shadow: var(--shadow); overflow: hidden; max-width: 90ch;
+}
+pre.codeblock, .codeblock pre {
+  margin: 0; padding: 14px 18px; overflow-x: auto;
+  font: 14px/1.65 var(--mono); tab-size: 4; color: #dce7f5;
+  -moz-tab-size: 4;
+}
+.codeblock .cb-head {
+  display: flex; align-items: center; gap: 10px; padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid var(--bd);
+  font-size: 12.5px; color: var(--muted); font-family: var(--mono);
+}
+.codeblock .cb-head .caption { flex: 1; }
+.codeblock .run-btn, .tiny-btn {
+  border: 1px solid var(--bd-strong); background: rgba(88, 166, 255, 0.10); color: var(--accent);
+  font-size: 12.5px; padding: 4px 13px; border-radius: 8px; cursor: pointer; font-family: var(--sans);
+  transition: background 0.15s;
+}
+.codeblock .run-btn:hover, .tiny-btn:hover { background: rgba(88, 166, 255, 0.22); }
+.codeblock .cb-out { border-top: 1px solid var(--bd); background: rgba(255, 255, 255, 0.015); }
+.codeblock .cb-out pre { border-radius: 0; border: 0; color: var(--text-dim); }
+.codeblock .cb-out .out-label {
+  font-size: 11px; color: var(--muted); padding: 8px 16px 0;
+  text-transform: uppercase; letter-spacing: 1.2px;
+}
+.codeblock .cb-out.err pre { color: var(--err); }
+
+/* синтаксис */
+.kw  { color: var(--syn-kw); }
+.str { color: var(--syn-str); }
+.com { color: var(--syn-com); font-style: italic; }
+.num { color: var(--syn-num); }
+.bi  { color: var(--syn-bi); }
+
+table.cmp {
+  border-collapse: separate; border-spacing: 0; width: max-content; max-width: 100%;
+  margin: 16px 0; font-size: 14px; display: block; overflow-x: auto;
+  border: 1px solid var(--bd); border-radius: 12px;
+}
+table.cmp th, table.cmp td {
+  border-bottom: 1px solid var(--bd); border-right: 1px solid var(--bd);
+  padding: 9px 14px; text-align: left; vertical-align: top;
+}
+table.cmp tr:last-child td { border-bottom: 0; }
+table.cmp th:last-child, table.cmp td:last-child { border-right: 0; }
+table.cmp th {
+  background: rgba(31, 111, 235, 0.14); color: #cfe2ff; font-weight: 700;
+  font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.6px;
+}
+
+.two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+.two-cols .col { border-radius: 12px; overflow: hidden; border: 1px solid var(--bd); background: var(--bg-code); box-shadow: var(--shadow); }
+.two-cols .col .col-h { font: 700 12.5px/1 var(--sans); padding: 10px 14px; }
+.two-cols .bad .col-h { color: var(--err); background: var(--err-bg); border-bottom: 1px solid var(--err-bd); }
+.two-cols .good .col-h { color: var(--ok); background: var(--ok-bg); border-bottom: 1px solid var(--ok-bd); }
+.two-cols .col pre { border-radius: 0; }
+
+.checklist { margin: 12px 0; padding-left: 22px; max-width: 76ch; }
+.checklist li { margin: 7px 0; }
+.checklist li::marker { color: var(--accent); }
+
+/* ---------------- задачи ---------------- */
+.task {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 30%), var(--bg-card);
+  border: 1px solid var(--bd); border-radius: var(--r);
+  padding: 20px 22px; margin: 26px 0; box-shadow: var(--shadow);
+}
+.task.done-task { border-color: var(--ok-bd); }
+.task-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.task-head h4 { margin: 0; font-size: 18px; font-weight: 750; letter-spacing: -0.2px; }
+.diff { color: var(--gold); letter-spacing: 3px; font-size: 11px; }
+.done-badge {
+  margin-left: auto; color: var(--ok); font-size: 12.5px; font-weight: 700;
+  background: var(--ok-bg); border: 1px solid var(--ok-bd);
+  padding: 3px 11px; border-radius: 99px;
+}
+.task .statement {
+  margin: 8px 0 14px; color: #dbe6f5; font-size: 15.5px; line-height: 1.7;
+  border-left: 3px solid var(--accent-deep); padding-left: 14px;
+}
+.task .statement .inline-code { background: rgba(255, 255, 255, 0.06); }
+
+.fmt { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+.fmt > div {
+  background: var(--bg-card2); border: 1px solid var(--bd); border-radius: 10px;
+  padding: 9px 14px; font-size: 13.5px; color: var(--text-dim);
+}
+.fmt b {
+  display: block; font-size: 10.5px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 1.4px; margin-bottom: 3px;
+}
+.task .examples { margin: 14px 0; }
+.task .examples > b {
+  font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.4px;
+}
+.task .examples .ex { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+.task .examples .ex > div {
+  background: var(--bg-code); border: 1px solid var(--bd); border-radius: 10px;
+  padding: 9px 14px; font-size: 13px; overflow-x: auto;
+}
+.task .examples .ex pre { margin: 5px 0 0; white-space: pre-wrap; font-family: var(--mono); color: #c8d6ea; }
+.task .examples .ex b { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; }
+
+details.hints { margin: 14px 0; }
+details.hints summary {
+  cursor: pointer; color: var(--accent); font-size: 14px; user-select: none;
+  font-weight: 600; outline: none;
+}
+details.hints summary:hover { text-decoration: underline; }
+details.hints[open] summary { margin-bottom: 4px; }
+details.hints ol { margin: 8px 0 4px; padding-left: 24px; }
+details.hints li {
+  margin: 8px 0; color: #e8d9ae; font-size: 14.5px;
+  padding-left: 4px;
+}
+details.hints li::marker { color: var(--gold); }
+details.hints li .inline-code { background: rgba(255, 255, 255, 0.06); color: #f0e4bc; }
+
+.editor textarea {
+  width: 100%; min-height: 190px; resize: vertical; padding: 13px 16px;
+  background: var(--bg-code); color: #e3ecf9; border: 1px solid var(--bd-strong);
+  border-radius: 12px; font: 14px/1.65 var(--mono); tab-size: 4; -moz-tab-size: 4;
+  outline: none; caret-color: var(--accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.editor textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+.editor textarea::placeholder { color: var(--muted); }
+
+.task-actions { display: flex; gap: 12px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+.btn {
+  border: 0; border-radius: 10px; padding: 10px 22px; font: inherit; font-size: 14.5px;
+  font-weight: 700; cursor: pointer; transition: filter 0.15s, opacity 0.15s, box-shadow 0.15s;
+}
+.btn.primary {
+  background: linear-gradient(180deg, #3d87f0, var(--accent-deep));
+  color: #fff; box-shadow: 0 6px 20px rgba(31, 111, 235, 0.35);
+}
+.btn.ghost { background: rgba(255, 255, 255, 0.04); color: var(--text); border: 1px solid var(--bd-strong); }
+.btn:hover { filter: brightness(1.14); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.45; cursor: wait; }
+.kbd { font-size: 11.5px; color: var(--muted); }
+.draft-note { margin-left: auto; font-size: 11.5px; color: var(--muted); }
+
+.results { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.results:empty { margin-top: 0; }
+.test-row {
+  border: 1px solid var(--bd); border-radius: 10px; padding: 9px 14px;
+  font-size: 13.5px; background: var(--bg-card2);
+}
+.test-row .t-head { display: flex; gap: 9px; align-items: center; font-weight: 700; }
+.test-row.ok { border-left: 3px solid var(--ok); background: linear-gradient(90deg, var(--ok-bg), var(--bg-card2) 40%); }
+.test-row.ok .t-status { color: var(--ok); }
+.test-row.fail { border-left: 3px solid var(--err); background: linear-gradient(90deg, var(--err-bg), var(--bg-card2) 40%); }
+.test-row.fail .t-status { color: var(--err); }
+.test-row .t-detail { color: var(--text-dim); margin-top: 5px; white-space: pre-wrap; font-size: 13px; }
+.test-row .t-diff { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.test-row .t-diff > div {
+  background: var(--bg-code); border: 1px solid var(--bd); border-radius: 8px;
+  padding: 8px 12px; font-family: var(--mono); font-size: 12.5px;
+  white-space: pre-wrap; overflow-x: auto; color: #c8d6ea;
+}
+.test-row .t-diff b {
+  font: 10.5px var(--sans); text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--muted); display: block; margin-bottom: 4px;
+}
+.checks-fail {
+  border: 1px solid var(--warn-bd); border-left: 3px solid var(--gold); background: var(--warn-bg);
+  color: #f4e6c1; border-radius: 10px; padding: 9px 14px; font-size: 13.5px;
+}
+.verdict { border-radius: 12px; padding: 12px 16px; font-weight: 800; font-size: 15px; margin-top: 4px; }
+.verdict.pass {
+  background: linear-gradient(90deg, var(--ok-bg), rgba(74, 194, 107, 0.03));
+  color: #8ee6a8; border: 1px solid var(--ok-bd);
+}
+.verdict.fail {
+  background: linear-gradient(90deg, var(--err-bg), rgba(255, 123, 114, 0.03));
+  color: #ffb3ad; border: 1px solid var(--err-bd);
+}
+.runout pre {
+  background: var(--bg-code); border: 1px solid var(--bd); border-radius: 10px;
+  padding: 11px 15px; font: 13px/1.6 var(--mono); overflow-x: auto; margin: 0; color: #d5e2f3;
+}
+.runout .rerr { color: var(--err); white-space: pre-wrap; font: 13px/1.6 var(--mono); }
+.runout .rfriendly {
+  margin-top: 8px; padding: 9px 14px; border-radius: 10px;
+  background: var(--warn-bg); border: 1px solid var(--warn-bd);
+  border-left: 3px solid var(--gold); font-size: 13.5px; color: #f4e6c1;
+}
+
+.summary-box {
+  background: var(--bg-card); border: 1px solid var(--bd); border-radius: var(--r);
+  padding: 16px 22px 14px; margin-top: 34px; box-shadow: var(--shadow);
+}
+.summary-box h3 { margin: 4px 0 10px; font-size: 17px; font-weight: 800; letter-spacing: -0.2px; }
+.summary-box li { margin: 6px 0; font-size: 14.5px; color: var(--text-dim); }
+.summary-box li::marker { color: var(--gold); }
+.further { color: var(--muted); font-size: 13px; margin-top: 10px; }
+
+.lesson-nav { display: flex; justify-content: space-between; margin-top: 40px; gap: 12px; }
+
+/* ---------------- план ---------------- */
+.plan pre {
+  background: var(--bg-card); border: 1px solid var(--bd); border-radius: var(--r);
+  padding: 20px 24px; font: 13px/1.55 var(--mono); overflow-x: auto;
+  white-space: pre-wrap; color: var(--text-dim); box-shadow: var(--shadow);
+}
+.plan .sec { color: var(--accent); font-weight: 700; }
+.plan .chx-done { color: var(--ok); font-weight: 700; }
+.plan .chx-todo { color: var(--muted); }
+.plan-note { color: var(--text-dim); font-size: 13.5px; margin: 8px 0 16px; max-width: 76ch; }
+
+/* ---------------- статус python / toast ---------------- */
+.bootpill {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px;
+  color: var(--text-dim); background: var(--bg-card); border: 1px solid var(--bd);
+  padding: 5px 13px; border-radius: 99px;
+}
+.bootpill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.bootpill.loading .dot { background: var(--gold); animation: pulse 1.1s infinite; }
+.bootpill.ready .dot { background: var(--ok); box-shadow: 0 0 8px rgba(74, 194, 107, 0.8); }
+.bootpill.error .dot { background: var(--err); }
+.bootpill .retry { color: var(--accent); cursor: pointer; text-decoration: underline; }
+@keyframes pulse { 50% { opacity: 0.25; } }
+
+.toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-card); border: 1px solid var(--ok-bd); color: var(--text);
+  padding: 13px 24px; border-radius: 14px; box-shadow: var(--shadow);
+  font-size: 15px; z-index: 50; animation: pop 0.25s; font-weight: 600;
+}
+@keyframes pop { from { transform: translateX(-50%) scale(0.92); opacity: 0; } }
+.build-info {
+  text-align: center; color: var(--muted); font-size: 11px;
+  padding-top: 10px; letter-spacing: 0.4px; font-variant-numeric: tabular-nums;
+}
+#burger { display: none; }
+
+/* ---------------- мобильный ---------------- */
+@media (max-width: 880px) {
+  #sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; z-index: 40; width: min(86vw, 330px);
+    transform: translateX(-102%); transition: transform 0.22s ease; box-shadow: var(--shadow);
+  }
+  body.nav-open #sidebar { transform: translateX(0); }
+  #burger {
+    display: block; position: fixed; z-index: 45; top: 12px; left: 12px;
+    width: 40px; height: 40px; border-radius: 11px; border: 1px solid var(--bd-strong);
+    background: var(--bg-card); color: var(--text); font-size: 17px; cursor: pointer;
+  }
+  body.nav-open::after { content: ""; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); z-index: 35; }
+  #main { padding-top: 64px; }
+  .lesson-head h2 { font-size: 26px; }
+  .fmt, .two-cols, .task .examples .ex, .test-row .t-diff { grid-template-columns: 1fr; }
+}
+
+/* ---------- v3: запуск по примеру, эталон, замки ---------- */
+.io-box { margin-top: 12px; }
+.io-box label {
+  display: block; font-size: 10.5px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 5px;
+}
+.io-box textarea.stdin {
+  width: 100%; resize: vertical; padding: 9px 13px; background: var(--bg-code);
+  color: #cfe0f5; border: 1px dashed var(--bd-strong); border-radius: 10px;
+  font: 13px/1.5 var(--mono); outline: none;
+}
+.io-box textarea.stdin:focus { border-style: solid; border-color: var(--accent); }
+.runout .out-label {
+  font-size: 10.5px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 1.2px; margin: 10px 0 -6px;
+}
+.solution-box {
+  margin-top: 8px; border: 1px solid var(--bd); border-radius: 12px;
+  overflow: hidden; background: var(--bg-code);
+}
+.solution-box .tiny-btn { margin: 8px 10px; }
+.solution-box pre {
+  margin: 0; padding: 12px 16px; overflow-x: auto;
+  font: 13.5px/1.6 var(--mono); border-top: 1px solid var(--bd); color: #dce7f5;
+}
+.lesson-item.locked { cursor: not-allowed; }
+.lesson-item.locked:hover { background: none; }
+
+</style>
+</head>
+<body>
+<div id="app" class="layout">
+  <button id="burger" aria-label="Меню">☰</button>
+  <aside id="sidebar"></aside>
+  <main id="main"></main>
+</div>
+<script>
+"use strict";
+/*
+ * core.js — чистая логика тренажёра без DOM.
+ * Вынесено отдельно, чтобы проверяться автотестом (node) без браузера:
+ * «урок засчитан при 3/3» и «следующая тема открывается» — здесь.
+ */
+window.PypathCore = (function () {
+
+  /* Плоский список уроков: [{si, li, id, taskIds:[...]}, ...] в порядке следования. */
+  function makeIndex(stages) {
+    const flat = [];
+    stages.forEach((st, si) => st.lessons.forEach((ls, li) => {
+      flat.push({ si, li, id: ls.data.id, taskIds: ls.data.tasks.map(t => t.id) });
+    }));
+    return flat;
+  }
+
+  /* Урок засчитан, если решены ВСЕ его задачи (порядок внутри урока — любой). */
+  function lessonComplete(item, isDone) {
+    return item.taskIds.length > 0 && item.taskIds.every(tid => isDone(item.id, tid));
+  }
+
+  /*
+   * Линейная разблокировка: открыт первый урок и всё, что идёт после
+   * полностью засчитанных уроков.
+   */
+  function unlockedFlags(flat, isDone) {
+    const flags = [];
+    let open = true;
+    for (let i = 0; i < flat.length; i++) {
+      flags.push(open);
+      open = open && lessonComplete(flat[i], isDone);
+    }
+    return flags;
+  }
+
+  /* Позиция, куда отправить ученика, когда он закончил урок; -1 — конец. */
+  function nextLesson(flat, isDone, pos) {
+    if (pos + 1 < flat.length && unlockedFlags(flat, isDone)[pos + 1]) return pos + 1;
+    return -1;
+  }
+
+  /* Первая незакрытая задача текущего урока (для кнопки «Следующая задача»). */
+  function firstOpenTask(item, isDone) {
+    return item.taskIds.findIndex(tid => !isDone(item.id, tid));
+  }
+
+  return { makeIndex, lessonComplete, unlockedFlags, nextLesson, firstOpenTask };
+})();
+
 window.PY_TRAINER_DATA = {
  "built": "2026-09-05 10:40",
  "pyodide": {
@@ -2693,3 +3245,659 @@ window.PY_TRAINER_DATA = {
   }
  ]
 };
+
+"use strict";
+/*
+ * pypath-тренажёр — клиентское приложение.
+ * Все данные (уроки, тесты, harness.py) вшиты в app/data.js генератором
+ * tools/build_site.py. Проверка решений выполняется harness'ом на Pyodide
+ * (тот же код, что у tools/validate_lessons.py) — «прошло здесь == пройдёт в тренажёре».
+ */
+
+const DATA = window.PY_TRAINER_DATA;
+if (!DATA) throw new Error("app/data.js не найден — запусти python3 tools/build_site.py");
+
+const LS_KEY = "pypath-trainer-v1";
+const $ = (sel, root) => (root || document).querySelector(sel);
+const el = (tag, cls, html) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (html !== undefined) n.innerHTML = html;
+  return n;
+};
+const esc = (s) => String(s == null ? "" : s)
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/* ---------- состояние и прогресс ---------- */
+
+const store = (() => {
+  let data;
+  try { data = JSON.parse(localStorage.getItem(LS_KEY)); } catch (e) { data = null; }
+  if (!data || typeof data !== "object") data = { done: {}, drafts: {} };
+  if (!data.done) data.done = {};
+  if (!data.drafts) data.drafts = {};
+  let timer = null;
+  return {
+    isDone: (lid, tid) => !!data.done[lid + ":" + tid],
+    markDone: (lid, tid) => { data.done[lid + ":" + tid] = true; save(); },
+    draft: (lid, tid) => data.drafts[lid + ":" + tid] || "",
+    setDraft: (lid, tid, code) => {
+      data.drafts[lid + ":" + tid] = code;
+      clearTimeout(timer); timer = setTimeout(save, 350);
+    },
+    reset: () => { data = { done: {}, drafts: {} }; save(); },
+    snapshot: () => data,
+    restore: (obj) => {
+      if (obj && typeof obj === "object" && obj.done && obj.drafts) { data = obj; save(); return true; }
+      return false;
+    },
+  };
+  function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch (e) { /* приватный режим */ } }
+})();
+
+const ALL_TASKS = [];
+DATA.stages.forEach(st => st.lessons.forEach(ls => {
+  ls.data.tasks.forEach(t => ALL_TASKS.push({ stage: st, lesson: ls, task: t }));
+}));
+const doneCount = () => ALL_TASKS.filter(x => store.isDone(x.lesson.data.id, x.task.id)).length;
+
+const CORE = window.PypathCore;
+if (!CORE) throw new Error("app/core.js не подключён");
+const FLAT = CORE.makeIndex(DATA.stages);
+const isDone = (lid, tid) => store.isDone(lid, tid);
+const unlockedFlags = () => CORE.unlockedFlags(FLAT, isDone);
+const flatPos = () => FLAT.findIndex((x) => x.si === state.stage && x.li === state.lesson);
+
+const state = { stage: 0, lesson: 0, view: "lesson", py: { status: "idle" } };
+
+/* ---------- подсветка python и лёгкий markdown ---------- */
+
+const PY_KW = new Set(("def return if elif else for while in not and or is None True False " +
+  "import from as class try except finally raise with lambda pass break continue assert " +
+  "del global yield async await match case").split(" "));
+const PY_BI = new Set(("print len range int float str list dict set tuple bool sum min max abs " +
+  "sorted round input open enumerate zip type repr help dir isinstance next").split(" "));
+
+function highlightPy(codeText) {
+  const rx = /("""[\s\S]*?"""|'''[\s\S]*?'''|[rbfu]{0,2}"(?:[^"\\\n]|\\.)*"?|[rbfu]{0,2}'(?:[^'\\\n]|\\.)*'?)|(#[^\n]*)|\b([A-Za-z_][A-Za-z_0-9]*)\b|(\b\d+(?:\.\d+)?\b)/g;
+  const safe = esc(codeText);
+  return safe.replace(rx, (m, str, com, name, num) => {
+    if (str) return '<span class="str">' + m + "</span>";
+    if (com) return '<span class="com">' + m + "</span>";
+    if (num) return '<span class="num">' + m + "</span>";
+    if (name) {
+      if (PY_KW.has(name)) return '<span class="kw">' + name + "</span>";
+      if (PY_BI.has(name)) return '<span class="bi">' + name + "</span>";
+    }
+    return m;
+  });
+}
+
+function md(text) {
+  return esc(text)
+    .replace(/`([^`]+)`/g, (m, g1) => '<code class="inline-code">' + g1 + "</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+}
+
+/* ---------- сайдбар ---------- */
+
+function renderSidebar() {
+  const side = $("#sidebar");
+  side.innerHTML = "";
+
+  const brand = el("div", "brand");
+  brand.innerHTML = '<div class="logo">🐍</div><div><h1>Python-тренажёр</h1><small>Основы · Мостик</small></div>';
+  side.appendChild(brand);
+
+  const total = ALL_TASKS.length, done = doneCount();
+  const ov = el("div", "overall");
+  ov.innerHTML =
+    '<div class="bar"><div class="fill" style="width:' + (total ? (done / total * 100) : 0) + '%"></div></div>' +
+    '<div class="txt"><span>решено задач</span><span>' + done + " / " + total + "</span></div>";
+  side.appendChild(ov);
+
+  const flags = unlockedFlags();
+  let fi = -1;
+  DATA.stages.forEach((st, si) => {
+    side.appendChild(el("div", "stage-title", esc(st.title)));
+    st.lessons.forEach((ls, li) => {
+      fi++;
+      const d = ls.data;
+      const nDone = d.tasks.filter(t => store.isDone(d.id, t.id)).length;
+      const isCur = state.view === "lesson" && state.stage === si && state.lesson === li;
+      const btn = el("button", "lesson-item" + (nDone === d.tasks.length ? " complete" : ""));
+      if (isCur) btn.classList.add("active");
+      btn.innerHTML =
+        '<span class="num">' + (nDone === d.tasks.length ? "✓" : (flags[fi] ? d.order : "🔒")) + "</span>" +
+        '<span class="name">' + esc(d.title) + "</span>" +
+        '<span class="frac">' + nDone + "/" + d.tasks.length + "</span>";
+      if (!flags[fi] && !isCur) {
+        btn.classList.add("locked");
+        btn.title = "Откроется, когда пройдёшь предыдущую тему";
+        btn.onclick = () => toast("Тема закрыта: реши все задачи предыдущей темы");
+      } else {
+        btn.onclick = () => { state.view = "lesson"; state.stage = si; state.lesson = li; render(); closeNav(); };
+      }
+      side.appendChild(btn);
+    });
+  });
+
+  const planBtn = el("button", "side-btn" + (state.view === "plan" ? " active" : ""), "📋 Мой план обучения");
+  planBtn.onclick = () => { state.view = "plan"; render(); closeNav(); };
+  side.appendChild(planBtn);
+
+  const foot = el("div", "side-foot");
+  const reset = el("button", "side-btn", "↺ сбросить прогресс");
+  reset.onclick = () => {
+    if (confirm("Сбросить отметки о решённых задачах и все черновики кода?")) { store.reset(); render(); }
+  };
+  foot.appendChild(reset);
+  const exp = el("button", "side-btn", "⬇ экспорт прогресса (.json)");
+  exp.onclick = () => {
+    const blob = new Blob([JSON.stringify({ app: "pypath", v: 1, ...store.snapshot() }, null, 1)],
+      { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "pypath-progress.json";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  };
+  foot.appendChild(exp);
+  const imp = el("button", "side-btn", "⬆ импорт прогресса из файла");
+  imp.onclick = () => {
+    const inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = ".json,application/json";
+    inp.onchange = () => {
+      const f = inp.files && inp.files[0];
+      if (!f) return;
+      f.text().then((t) => {
+        let obj = null;
+        try { obj = JSON.parse(t); } catch (e) { obj = null; }
+        if (obj && store.restore(obj)) { render(); toast("Прогресс загружен"); }
+        else toast("Не похоже на бэкап pypath-progress.json");
+      });
+    };
+    inp.click();
+  };
+  foot.appendChild(imp);
+  const fresh = el("button", "side-btn", "🧹 жёсткая перезагрузка (без кэша)");
+  fresh.title = "Перезагрузить app.css, app.js и data.js минуя кэш браузера";
+  fresh.onclick = hardReload;
+  foot.appendChild(fresh);
+  side.appendChild(foot);
+
+  if (DATA.built) {
+    side.appendChild(el("div", "build-info", "сборка данных: " + esc(DATA.built)));
+  }
+}
+
+async function hardReload() {
+  // обновляем кэш HTTP принудительно, затем обычный reload — он возьмёт свежие файлы
+  try {
+    await Promise.all(["app/app.css", "app/core.js", "app/app.js", "app/data.js"].map(
+      (u) => fetch(u, { cache: "reload" }).catch(() => null)));
+  } catch (e) { /* file:// — fetch может быть недоступен, перезагрузка всё равно поможет */ }
+  location.reload();
+}
+
+/* ---------- теория ---------- */
+
+function renderTheoryBlocks(container, theory) {
+  theory.forEach(block => {
+    switch (block.type) {
+      case "text":
+        container.appendChild(el("p", null, md(block.text)));
+        break;
+      case "note":
+        container.appendChild(el("div", "callout note", '<span class="ico">💡</span>' + md(block.text)));
+        break;
+      case "warning":
+        container.appendChild(el("div", "callout warning", '<span class="ico">⚠️</span>' + md(block.text)));
+        break;
+      case "code": {
+        const wrap = el("div", "codeblock");
+        const head = el("div", "cb-head");
+        head.innerHTML = '<span class="caption">' + esc(block.caption || "python") + "</span>";
+        const run = el("button", "run-btn", "▶ Запустить");
+        head.appendChild(run);
+        const pre = el("pre", null, '<code>' + highlightPy(block.code) + "</code>");
+        wrap.append(head, pre);
+        if (block.output) {
+          const out = el("div", "cb-out");
+          out.innerHTML = '<div class="out-label">' + (block.run_check ? "вывод в консоли:" : "возможный вывод:") + "</div>" +
+            "<pre>" + esc(block.output) + "</pre>";
+          wrap.appendChild(out);
+        }
+        run.onclick = () => runExample(block, wrap, head, run);
+        container.appendChild(wrap);
+        break;
+      }
+      case "table": {
+        const table = el("table", "cmp");
+        let html = "";
+        if (block.header) html += "<thead><tr>" + block.header.map(h => "<th>" + md(h) + "</th>").join("") + "</tr></thead>";
+        html += "<tbody>" + block.rows.map(r => "<tr>" + r.map(c => "<td>" + md(c) + "</td>").join("") + "</tr>").join("") + "</tbody>";
+        table.innerHTML = html;
+        container.appendChild(table);
+        break;
+      }
+      case "list": {
+        const box = el("div");
+        if (block.title) box.appendChild(el("div", null, "<b>" + md(block.title) + "</b>"));
+        box.appendChild(el("ul", "checklist", block.items.map(i => "<li>" + md(i) + "</li>").join("")));
+        container.appendChild(box);
+        break;
+      }
+      case "compare": {
+        const grid = el("div", "two-cols");
+        const col = (kind, label, codeText) => {
+          const c = el("div", "col " + kind);
+          c.innerHTML = '<div class="col-h">' + label + "</div><pre class=\"codeblock\"><code>" + highlightPy(codeText) + "</code></pre>";
+          return c;
+        };
+        grid.append(col("bad", "✗ так не надо", block.bad), col("good", "✓ так надо", block.good));
+        if (block.title) container.appendChild(el("div", null, "<b>" + md(block.title) + "</b>"));
+        container.appendChild(grid);
+        break;
+      }
+    }
+  });
+}
+
+async function runExample(block, wrap, head, btn) {
+  if (state.py.status !== "ready") { ensurePy(); return flash(btn, "Python грузится…"); }
+  btn.disabled = true;
+  try {
+    const res = callRun(block.code, block.input || "");
+    let out = wrap.querySelector(".cb-run");
+    if (!out) { out = el("div", "cb-out cb-run"); wrap.appendChild(out); }
+    out.classList.toggle("err", !res.ok);
+    if (res.ok) {
+      out.innerHTML = '<div class="out-label">вывод:</div><pre>' +
+        (res.stdout ? esc(res.stdout.replace(/\n$/, "")) : "— пусто —") + "</pre>";
+    } else {
+      out.innerHTML = '<div class="out-label">ошибка:</div><pre class="rerr">' + esc(res.error || "неизвестная ошибка") + "</pre>";
+    }
+  } finally { btn.disabled = false; }
+}
+
+function flash(btn, text) {
+  const old = btn.textContent;
+  btn.textContent = text;
+  setTimeout(() => { btn.textContent = old; }, 1200);
+}
+
+/* ---------- задачи ---------- */
+
+function renderTask(lessonData, task, idx) {
+  const card = el("section", "task" + (store.isDone(lessonData.id, task.id) ? " done-task" : ""));
+  card.id = "task-" + task.id;
+
+  const head = el("div", "task-head");
+  head.innerHTML =
+    "<h4>Задача " + (idx + 1) + " · " + esc(task.title) + "</h4>" +
+    '<span class="diff" title="сложность">' + "●".repeat(task.difficulty) + "○".repeat(3 - task.difficulty) + "</span>" +
+    (store.isDone(lessonData.id, task.id) ? '<span class="done-badge">✓ решено</span>' : "");
+  card.appendChild(head);
+
+  card.appendChild(el("div", "statement", md(task.statement)));
+
+  const fmt = el("div", "fmt");
+  fmt.innerHTML =
+    "<div><b>вход</b>" + md(task.input_format || "—") + "</div>" +
+    "<div><b>выход</b>" + md(task.output_format || "—") + "</div>";
+  card.appendChild(fmt);
+
+  if (task.examples && task.examples.length) {
+    const exBox = el("div", "examples");
+    exBox.innerHTML = task.examples.map(ex =>
+      '<div class="ex"><div><b>вход</b><pre>' + esc(ex.input || "—") + '</pre></div>' +
+      "<div><b>выход</b><pre>" + esc(ex.output || "") + "</pre></div></div>").join("");
+    exBox.firstChild && exBox.insertBefore(el("b", null, "Пример"), exBox.firstChild);
+    card.appendChild(exBox);
+  }
+
+  if (task.hints && task.hints.length) {
+    const det = el("details", "hints");
+    det.innerHTML = "<summary>Подсказки (" + task.hints.length + ") — открывай по одной</summary><ol>" +
+      task.hints.map(h => "<li>" + md(h) + "</li>").join("") + "</ol>";
+    card.appendChild(det);
+  }
+
+  const editor = el("div", "editor");
+  const ta = document.createElement("textarea");
+  ta.spellcheck = false;
+  ta.value = store.draft(lessonData.id, task.id) || "";
+  ta.placeholder = "# пиши решение здесь…";
+  ta.addEventListener("input", () => store.setDraft(lessonData.id, task.id, ta.value));
+  ta.addEventListener("keydown", (e) => {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const s = ta.selectionStart, t = ta.selectionEnd;
+      ta.value = ta.value.slice(0, s) + "    " + ta.value.slice(t);
+      ta.selectionStart = ta.selectionEnd = s + 4;
+      store.setDraft(lessonData.id, task.id, ta.value);
+    }
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doCheck(); }
+  });
+  editor.appendChild(ta);
+  card.appendChild(editor);
+
+  const visTest = (task.tests || []).find((t) => t.visible) || (task.tests || [])[0] || {};
+  const ioBox = el("div", "io-box");
+  const ioLabel = el("label", null, "ввод программы для «Запустить» (как если бы ученик напечатал с клавиатуры)");
+  const stdinTa = document.createElement("textarea");
+  stdinTa.className = "stdin";
+  stdinTa.rows = 2;
+  stdinTa.placeholder = "— ввод не нужен —";
+  stdinTa.value = visTest.input || "";
+  ioBox.append(ioLabel, stdinTa);
+  card.appendChild(ioBox);
+
+  const actions = el("div", "task-actions");
+  const checkBtn = el("button", "btn primary", "Проверить");
+  const runBtn = el("button", "btn ghost", "▶ Запустить на примере");
+  if (task.tests && task.tests.some((t) => t.code_before || t.code_after)) {
+    runBtn.title = "Задача проверяется вызовом твоей функции — нажми «Проверить»";
+  } else if (visTest.files) {
+    runBtn.title = "Файлы из visible-теста будут созданы в песочнице запуска";
+  }
+  actions.append(checkBtn, runBtn, el("span", "kbd", "Ctrl + Enter — проверить"));
+  const out = el("div", "results");
+  actions.appendChild(out);
+
+  checkBtn.onclick = doCheck;
+  runBtn.onclick = () => doRun(ta.value);
+  card.append(actions, out);
+
+  function doCheck() {
+    if (state.py.status !== "ready") { ensurePy(); return toast("Python ещё грузится — попробуй через пару секунд"); }
+    const code = ta.value;
+    if (!code.trim()) return renderResults(out, { passed: false, results: [], note: "Пусто: редактор же пустой :)" });
+    checkBtn.disabled = true;
+    setTimeout(() => {
+      try {
+        const payload = { tests: task.tests, checks: task.checks, compare: task.compare };
+        const res = JSON.parse(state.py.check(code, JSON.stringify(payload)));
+        renderResults(out, res);
+        if (res.passed && !store.isDone(lessonData.id, task.id)) {
+          store.markDone(lessonData.id, task.id);
+          if (!head.querySelector(".done-badge")) head.appendChild(el("span", "done-badge", "✓ решено"));
+          card.classList.add("done-task");
+          celebrate(task, idx, out);
+          showSolutionBox(out, task);
+          renderSidebar();
+          maybeAdvanceLesson(lessonData);
+        } else if (res.passed) {
+          showSolutionBox(out, task);
+        }
+      } catch (e) {
+        out.innerHTML = '<div class="verdict fail">Сбой проверки: ' + esc(String(e)) + "</div>";
+      } finally { checkBtn.disabled = false; }
+    }, 0);
+  }
+
+  function doRun(code) {
+    if (state.py.status !== "ready") { ensurePy(); return toast("Python ещё грузится"); }
+    const opts = {};
+    if (visTest.files) opts.files = visTest.files;
+    const want = Object.keys(visTest.output_files || {});
+    if (want.length) opts.want_files = want;
+    try {
+      const res = callRun(code, stdinTa.value, opts);
+      const runBox = el("div", "runout");
+      if (res.ok) {
+        let html = "<pre>" + (res.stdout ? esc(res.stdout.replace(/\n$/, "")) : "— программа ничего не напечатала —") + "</pre>";
+        for (const fname of Object.keys(res.files || {})) {
+          const body = res.files[fname];
+          html += '<div class="out-label">файл ' + esc(fname) + ":</div><pre>" +
+            (body == null ? "— не создан —" : esc(body)) + "</pre>";
+        }
+        runBox.innerHTML = html;
+      } else {
+        runBox.innerHTML = '<pre class="rerr">' + esc(res.error || "ошибка") + "</pre>" +
+          (res.friendly ? '<div class="rfriendly">' + esc(res.friendly) + "</div>" : "");
+      }
+      out.innerHTML = "";
+      out.appendChild(runBox);
+    } catch (e) {
+      toast("Запуск невозможен: " + e);
+    }
+  }
+  return card;
+}
+
+function renderResults(out, res) {
+  out.innerHTML = "";
+  if (res.note) {
+    out.appendChild(el("div", "verdict fail", esc(res.note)));
+    return;
+  }
+  if (res.syntax_error) {
+    out.appendChild(el("div", "verdict fail", "Синтаксис: " + esc(res.syntax_error.error) +
+      (res.syntax_error.friendly ? "<br><small>" + esc(res.syntax_error.friendly) + "</small>" : "")));
+    return;
+  }
+  if (res.checks_failed && res.checks_failed.length) {
+    res.checks_failed.forEach(msg => out.appendChild(el("div", "checks-fail", "⚠️ " + esc(msg))));
+  }
+  const rows = [];
+  let passedN = 0;
+  (res.results || []).forEach(r => {
+    if (r.ok) passedN++;
+    const row = el("div", "test-row " + (r.ok ? "ok" : "fail"));
+    let inner = '<div class="t-head"><span class="t-status">' + (r.ok ? "✓" : "✗") + "</span><span>" +
+      (r.visible ? "Тест " + (r.index + 1) : "Скрытый тест " + (r.index + 1)) + "</span></div>";
+    if (!r.ok) {
+      inner += '<div class="t-detail">' + esc(r.friendly || r.detail || r.error || "не прошло") + "</div>";
+      if (r.expected !== null && r.expected !== undefined && r.expected !== "") {
+        inner += '<div class="t-diff"><div><b>ожидалось</b>' + esc(r.expected) + "</div>" +
+          "<div><b>твой вывод</b>" + esc(r.stdout == null ? "" : r.stdout) + "</div></div>";
+      }
+    }
+    row.innerHTML = inner;
+    rows.push(row);
+  });
+  rows.forEach(r => out.appendChild(r));
+  const ok = res.passed;
+  out.appendChild(el("div", "verdict " + (ok ? "pass" : "fail"),
+    ok ? "🎉 Все тесты пройдены — задача засчитана!" : "Пока не проходит: " + passedN + "/" + (res.results || []).length + " тестов"));
+}
+
+function celebrate(task, idx, out) {
+  const btn = el("button", "btn ghost", "Следующая задача →");
+  btn.onclick = () => {
+    const cards = [...out.closest(".task").parentElement.querySelectorAll(".task")];
+    const cur = cards[idx];
+    const target = cards.slice(idx + 1).find(c => !c.classList.contains("done-task")) || cards[idx + 1];
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  if (idx < out.closest(".task").parentElement.querySelectorAll(".task").length - 1) {
+    out.appendChild(btn);
+  }
+  toast("Задача «" + task.title + "» решена!");
+}
+
+/* ---------- урок ---------- */
+
+function render() {
+  renderSidebar();
+  const main = $("#main");
+  main.innerHTML = "";
+  if (state.view === "plan") return renderPlan(main);
+
+  const stage = DATA.stages[state.stage];
+  const lessonEntry = stage.lessons[state.lesson];
+  const d = lessonEntry.data;
+
+  const boot = el("div");
+  boot.style.cssText = "display:flex;justify-content:flex-end;margin-bottom:-34px";
+  boot.appendChild(bootPill());
+  main.appendChild(boot);
+
+  const head = el("header", "lesson-head");
+  head.innerHTML =
+    '<div class="kicker">' + esc(stage.title) + "</div>" +
+    "<h2>" + d.order + ". " + esc(d.title) + "</h2>" +
+    '<p class="sub">' + esc(d.subtitle || "") + "</p>" +
+    '<div class="meta"><span>⏱ ~' + d.minutes + " мин</span><span>" + d.tasks.length + " задач(и)</span>" +
+    '<div class="lessonprog"><div class="bar"><div class="fill" style="width:' +
+    (d.tasks.filter(t => store.isDone(d.id, t.id)).length / d.tasks.length * 100) + '%"></div></div></div></div>';
+  main.appendChild(head);
+
+  if (d.goals && d.goals.length) {
+    const g = el("div", "goals");
+    g.innerHTML = "<b>Цели урока</b><ul>" + d.goals.map(x => "<li>" + md(x) + "</li>").join("") + "</ul>";
+    main.appendChild(g);
+  }
+
+  main.appendChild(el("h3", "block-h", "📖 Теория"));
+  const theory = el("div", "theory");
+  renderTheoryBlocks(theory, d.theory);
+  main.appendChild(theory);
+
+  main.appendChild(el("h3", "block-h", "⌨️ Практика"));
+  const tasksWrap = el("div", "tasks");
+  d.tasks.forEach((t, i) => tasksWrap.appendChild(renderTask(d, t, i)));
+  main.appendChild(tasksWrap);
+
+  if (d.summary && d.summary.length) {
+    const s = el("div", "summary-box");
+    s.innerHTML = "<h3>Что запомнить</h3><ul class=\"checklist\">" +
+      d.summary.map(x => "<li>" + md(x) + "</li>").join("") + "</ul>" +
+      (d.further && d.further.length ? '<div class="further" style="margin-top:8px">Читать дальше: ' +
+        d.further.map(f => "«" + esc(f) + "»").join(" · ") + "</div>" : "");
+    main.appendChild(s);
+  }
+
+  const nav = el("div", "lesson-nav");
+  const prevBtn = el("button", "btn ghost", "← предыдущий");
+  const nextBtn = el("button", "btn ghost", "следующий →");
+  const flat = flatLessons();
+  const pos = flat.findIndex(x => x.si === state.stage && x.li === state.lesson);
+  if (pos > 0) prevBtn.onclick = () => { state.stage = flat[pos - 1].si; state.lesson = flat[pos - 1].li; state.view = "lesson"; render(); window.scrollTo(0, 0); };
+  else prevBtn.disabled = true;
+  if (pos < flat.length - 1) nextBtn.onclick = () => { state.stage = flat[pos + 1].si; state.lesson = flat[pos + 1].li; state.view = "lesson"; render(); window.scrollTo(0, 0); };
+  else nextBtn.disabled = true;
+  nav.append(prevBtn, nextBtn);
+  main.appendChild(nav);
+}
+
+function flatLessons() {
+  const arr = [];
+  DATA.stages.forEach((st, si) => st.lessons.forEach((ls, li) => arr.push({ si, li })));
+  return arr;
+}
+
+/* ---------- план ---------- */
+
+function renderPlan(main) {
+  const head = el("header", "lesson-head");
+  head.innerHTML = '<div class="kicker">PYTHON_PLAN.txt</div><h2>Мой план обучения</h2>' +
+    '<p class="sub">Единственный источник правды: чеклисты, сроки, дневник. Отмечать прогресс — в файле (правила в разделе 10).</p>';
+  main.appendChild(head);
+  main.appendChild(el("div", "plan-note", "Это представление файла из репозитория: здесь только читать, отмечать [x] нужно руками в PYTHON_PLAN.txt после того, как написал тему собственными руками без подсказок. ✅"));
+  const box = el("div", "plan");
+  const lines = DATA.plan.split("\n");
+  const html = lines.map(line => {
+    let l = esc(line);
+    if (/^={3,}/.test(line) || /^-{3,}/.test(line)) return l;
+    l = l.replace(/\[x\]/g, '<span class="chx-done">[x]</span>').replace(/\[ \]/g, '<span class="chx-todo">[ ]</span>');
+    if (/^\s*\d+(\.\d+)?\.?\s+\S/.test(line) && line.length < 95) l = '<span class="sec">' + l + "</span>";
+    return l;
+  }).join("\n");
+  box.innerHTML = "<pre>" + html + "</pre>";
+  main.appendChild(box);
+}
+
+/* ---------- pyodide ---------- */
+
+function bootPill() {
+  const p = el("div", "bootpill " + state.py.status);
+  const s = { idle: "python: ждёт запуска", loading: "python: загрузка… (~10 МБ, один раз)", ready: "python: готов — проверки работают", error: "python не загрузился (нужен интернет). <span class=\"retry\">повторить</span>" };
+  p.innerHTML = '<span class="dot"></span>' + s[state.py.status];
+  if (state.py.status === "error") p.querySelector(".retry").onclick = () => { state.py.status = "idle"; ensurePy(); render(); };
+  return p;
+}
+
+function ensurePy() {
+  if (state.py.status !== "idle") return;
+  state.py.status = "loading";
+  renderBootPills();
+  const s = document.createElement("script");
+  s.src = DATA.pyodide.cdn + "pyodide.js";
+  s.onload = async () => {
+    try {
+      const py = await window.loadPyodide({ indexURL: DATA.pyodide.cdn });
+      py.runPython(DATA.harness);
+      state.py = {
+        status: "ready", pyodide: py,
+        check: py.globals.get("check_task_json"),
+        run: py.globals.get("run_program_json"),
+      };
+    } catch (e) {
+      state.py = { status: "error", err: String(e) };
+    }
+    renderBootPills();
+  };
+  s.onerror = () => { state.py = { status: "error", err: "cdn недоступен" }; renderBootPills(); };
+  document.head.appendChild(s);
+}
+
+function renderBootPills() { document.querySelectorAll(".bootpill").forEach(n => n.replaceWith(bootPill())); }
+function callRun(code, stdin, opts) {
+  const o = Object.assign({ echo_prompts: true }, opts || {});
+  return JSON.parse(state.py.run(code, stdin || "", JSON.stringify(o)));
+}
+
+function showSolutionBox(out, task) {
+  if (!task.solution || out.querySelector(".solution-box")) return;
+  const box = el("div", "solution-box");
+  const btn = el("button", "tiny-btn", "👀 эталонное решение — сравни со своим");
+  const pre = document.createElement("pre");
+  pre.innerHTML = "<code>" + highlightPy(task.solution) + "</code>";
+  pre.style.display = "none";
+  btn.onclick = () => { pre.style.display = pre.style.display === "none" ? "block" : "none"; };
+  box.append(btn, pre);
+  out.appendChild(box);
+}
+
+/* Урок засчитан (все задачи решены) → открываем следующую тему. */
+function maybeAdvanceLesson(lessonData) {
+  const pos = flatPos();
+  if (pos < 0 || FLAT[pos].id !== lessonData.id) return;
+  if (!CORE.lessonComplete(FLAT[pos], isDone)) return;
+  const next = CORE.nextLesson(FLAT, isDone, pos);
+  if (next < 0) { toast("Это была последняя открытая тема — всё решено 🎓"); return; }
+  const nx = DATA.stages[FLAT[next].si].lessons[FLAT[next].li].data;
+  toast("Тема «" + lessonData.title + "» пройдена → открываю «" + nx.title + "»");
+  setTimeout(() => {
+    if (state.view !== "lesson" || flatPos() !== pos) return;
+    state.stage = FLAT[next].si;
+    state.lesson = FLAT[next].li;
+    render();
+    window.scrollTo(0, 0);
+  }, 1800);
+}
+
+/* ---------- мелочи ---------- */
+
+let toastTimer = null;
+function toast(text) {
+  document.querySelectorAll(".toast").forEach(n => n.remove());
+  const t = el("div", "toast", esc(text));
+  document.body.appendChild(t);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.remove(), 2600);
+}
+
+$("#burger").onclick = () => document.body.classList.toggle("nav-open");
+function closeNav() { document.body.classList.remove("nav-open"); }
+
+render();
+ensurePy();
+
+</script>
+</body>
+</html>
