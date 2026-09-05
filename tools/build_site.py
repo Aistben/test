@@ -31,6 +31,30 @@ def read(path):
         return f.read()
 
 
+def stamp_assets():
+    """Версия = хэш содержимого файлов приложения; вписывает ?v=... в index.html,
+    чтобы браузер не показывал устаревший кэш app.css/app.js/data.js."""
+    import hashlib
+    import re
+
+    h = hashlib.sha256()
+    for p in ("app/app.css", "app/app.js", "app/data.js"):
+        with open(os.path.join(ROOT, p), "rb") as f:
+            h.update(f.read())
+    ver = h.hexdigest()[:10]
+
+    path = os.path.join(ROOT, "index.html")
+    html = read(path)
+    html = re.sub(r'(<link rel="stylesheet" href="app/app\.css)(?:\?v=[0-9a-f]+)?(")',
+                  rf"\1?v={ver}\2", html)
+    html = re.sub(r'(<script src="app/(?:data|app)\.js)(?:\?v=[0-9a-f]+)?(")',
+                  rf"\1?v={ver}\2", html)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(html)
+    return ver
+
+
+
 def main():
     index = json.loads(read(os.path.join(ROOT, "content", "index.json")))
     stages = []
@@ -67,8 +91,9 @@ def main():
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(js)
 
+    ver = stamp_assets()
     size = len(js.encode("utf-8")) // 1024
-    print(f"data.js: {size} КБ, уроков: {n_lessons}, этап(ов): {len(stages)}")
+    print(f"data.js: {size} КБ, уроков: {n_lessons}, этап(ов): {len(stages)}, версия ассетов: {ver}")
 
 
 if __name__ == "__main__":

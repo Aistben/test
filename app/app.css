@@ -432,6 +432,10 @@ details.hints li .inline-code { background: rgba(255, 255, 255, 0.06); color: #f
   font-size: 15px; z-index: 50; animation: pop 0.25s; font-weight: 600;
 }
 @keyframes pop { from { transform: translateX(-50%) scale(0.92); opacity: 0; } }
+.build-info {
+  text-align: center; color: var(--muted); font-size: 11px;
+  padding-top: 10px; letter-spacing: 0.4px; font-variant-numeric: tabular-nums;
+}
 #burger { display: none; }
 
 /* ---------------- мобильный ---------------- */

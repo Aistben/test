@@ -122,7 +122,24 @@ function renderSidebar() {
     if (confirm("Сбросить отметки о решённых задачах и все черновики кода?")) { store.reset(); render(); }
   };
   foot.appendChild(reset);
+  const fresh = el("button", "side-btn", "🧹 жёсткая перезагрузка (без кэша)");
+  fresh.title = "Перезагрузить app.css, app.js и data.js минуя кэш браузера";
+  fresh.onclick = hardReload;
+  foot.appendChild(fresh);
   side.appendChild(foot);
+
+  if (DATA.built) {
+    side.appendChild(el("div", "build-info", "сборка данных: " + esc(DATA.built)));
+  }
+}
+
+async function hardReload() {
+  // обновляем кэш HTTP принудительно, затем обычный reload — он возьмёт свежие файлы
+  try {
+    await Promise.all(["app/app.css", "app/app.js", "app/data.js"].map(
+      (u) => fetch(u, { cache: "reload" }).catch(() => null)));
+  } catch (e) { /* file:// — fetch может быть недоступен, перезагрузка всё равно поможет */ }
+  location.reload();
 }
 
 /* ---------- теория ---------- */
