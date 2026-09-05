@@ -13,7 +13,16 @@
       "id": "bridge",
       "title": "Мостик — от основ к специализации",
       "description": "Кортежи, множества, исключения, модули, стандартная библиотека, основы ООП.",
-      "lessons": []
+      "lessons": [
+        "bridge/01_tuples_sets.json",
+        "bridge/02_comprehensions.json",
+        "bridge/03_exceptions.json",
+        "bridge/04_modules.json",
+        "bridge/05_stdlib.json",
+        "bridge/06_json_csv.json",
+        "bridge/07_oop_basics.json",
+        "bridge/08_functions_advanced.json"
+      ]
     }
   ]
 }
