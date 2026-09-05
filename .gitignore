@@ -4,11 +4,6 @@
 .vscode/
 *.sublime*
 
-# --- Node / фронтенд (заготовка сайта) ---
-node_modules/
-npm-debug.*
-build/
-
 # --- Python ---
 venv/
 .venv/
