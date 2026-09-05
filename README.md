@@ -67,11 +67,11 @@ python3 -m http.server 8000
    `/ (root)`; включить «Enforce HTTPS» (сертификат GitHub выпустит сам,
    когда появится DNS-запись).
 2. DNS домена (snake.io обслуживает Cloudflare) — одна запись:
-   `CNAME aistben → aistben.github.io`, Proxy status: **DNS only** (серое
-   облако; при оранжевом GitHub не сможет выдать сертификат). Значение в
-   файле `CNAME` в корне репозитория должно совпадать с настройкой Pages.
+   СНАЧАЛА создаёшь запись `CNAME pypath → aistben.github.io`, Proxy status:
+   **DNS only** (серое облако; при оранжевом GitHub не выдаст сертификат),
+   и только потом вписываешь домен в Pages — иначе сохранение падает с
+   InvalidDNSError. Файл `CNAME` в корне = та же строка `pypath.snake.io`.
 3. `.nojekyll` отключает обработку Jekyll — Pages публикует файлы как есть.
 
-После этого тренажёр открывается на `https://aistben.snake.io/`. Для бренда
-`pypath.snake.io` достаточно добавить ещё одну CNAME-запись (`pypath`) и
-поменять значение в настройках Pages и файле `CNAME`.
+После этого тренажёр открывается на `https://pypath.snake.io/`. У сайта может
+быть только один кастомный домен; старый `aistben.snake.io` при этом не работает.
