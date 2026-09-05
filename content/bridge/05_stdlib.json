@@ -1,0 +1,272 @@
+{
+  "id": "stdlib",
+  "stage": "bridge",
+  "order": 5,
+  "title": "Стандартная библиотека",
+  "subtitle": "random, math, datetime, pathlib, time",
+  "minutes": 50,
+  "version": 1,
+  "goals": [
+    "Генерировать случайности воспроизводимо: seed, randint, choice, shuffle",
+    "Брать из math корни, pi и правильное округление ceil/floor",
+    "Считать даты через date, timedelta, strptime и strftime",
+    "Разбирать пути через pathlib: name, suffix, iterdir"
+  ],
+  "theory": [
+    {
+      "type": "text",
+      "text": "«Батарейки в комплекте»: Python идёт с большой библиотекой готовых модулей — ставить через pip ничего не нужно. Разберём пятерку тех, что нужны в любой ветке: random, math, datetime, pathlib, time."
+    },
+    {
+      "type": "text",
+      "text": "Модуль `random` — случайные числа и выбор. `randint(a, b)` — целое от a до b включительно, `choice(seq)` — случайный элемент, `shuffle(list)` — перемешивание на месте. Для воспроизводимости (тесты, отладка) ставят `random.seed(число)` — после сида вся «случайность» повторяется от запуска к запуску."
+    },
+    {
+      "type": "code",
+      "code": "import random\n\nrandom.seed(7)\nprint(random.randint(1, 6))\nprint(random.randint(1, 6))\nprint(random.choice([\"камень\", \"ножницы\", \"бумага\"]))",
+      "output": "3\n2\nножницы",
+      "run_check": true
+    },
+    {
+      "type": "code",
+      "code": "import random\n\ncards = [\"туз\", \"король\", \"дама\", \"валет\"]\nrandom.shuffle(cards)\nprint(cards)  # каждый раз новый порядок",
+      "caption": "shuffle меняет сам список, ничего не возвращает"
+    },
+    {
+      "type": "text",
+      "text": "Модуль `math` — честная математика: `sqrt` (корень), `pi`, `floor` (в меньшую сторону) и `ceil` (в большую). Последний часто спасает в задачах «сколько упаковок нужно»."
+    },
+    {
+      "type": "code",
+      "code": "import math\n\nprint(math.sqrt(144))\nprint(math.ceil(10 / 3))\nprint(math.floor(10 / 3))\nprint(round(math.pi, 4))",
+      "output": "12.0\n4\n3\n3.1416",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "`datetime`: дата — объект `date(year, month, day)`, с ним складывается `timedelta` — «промежуток». Форматирование: `strftime` — дата → строка по шаблону, `strptime` — строка → дата. Шаблоны: `%d` день, `%m` месяц, `%Y` год."
+    },
+    {
+      "type": "code",
+      "code": "from datetime import date, timedelta\n\nstart = date(2026, 9, 5)\ndeadline = start + timedelta(days=14)\nprint(deadline.strftime(\"%d.%m.%Y\"))\nprint(deadline.weekday())  # 0=пн ... 5=сб, 6=вс",
+      "output": "19.09.2026\n5",
+      "run_check": true
+    },
+    {
+      "type": "code",
+      "code": "from datetime import datetime\n\nbirthday = datetime.strptime(\"12.06.1990\", \"%d.%m.%Y\")\nprint(birthday.year)\nprint(birthday.strftime(\"%d.%m.%Y\"))",
+      "output": "1990\n12.06.1990",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "`pathlib.Path` — объект «путь к файлу» вместо возни со строками и `os.path`. Он сам разберёт имя на части и спросит, существует ли файл. А `Path(\".\").iterdir()` перечислит содержимое папки."
+    },
+    {
+      "type": "code",
+      "code": "from pathlib import Path\n\np = Path(\"downloads/report.pdf\")\nprint(p.name)\nprint(p.suffix)\nprint(p.stem)\nprint(Path(\"заметки.txt\").exists())",
+      "output": "report.pdf\n.pdf\nreport\nFalse",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Ещё пара полезностей: `time.perf_counter()` — секунды для замеров «сколько работало», а `dir(модуль)` и `help()` покажут, что внутри незнакомой библиотеки. Полная витрина стандартной библиотеки — в docs.python.org/3/library/, там есть буквально всё: от архивов до работы с почтой."
+    },
+    {
+      "type": "warning",
+      "text": "`random.random()` и `datetime.now()` дают каждый раз новый результат — автопроверка на них ломается. Хочешь тестируемую случайность — зафиксируй `random.seed(...)`; даты в задачах передавай явно (date(2026, 9, 5)), а не бери «сегодня»."
+    },
+    {
+      "type": "table",
+      "header": [
+        "Модуль",
+        "Берут, когда нужно"
+      ],
+      "rows": [
+        [
+          "random",
+          "кости, рандомная выдача, перемешать колоду"
+        ],
+        [
+          "math",
+          "корни, pi, округление вверх/вниз"
+        ],
+        [
+          "datetime",
+          "дедлайны, сколько дней прошло, парсить дату из строки"
+        ],
+        [
+          "pathlib",
+          "разобрать имя файла, проверить существование, обойти папку"
+        ],
+        [
+          "time",
+          "замерить длительность, поставить паузу sleep()"
+        ]
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "stdlib_t1",
+      "title": "Гипотенуза",
+      "difficulty": 1,
+      "statement": "Программа читает два целых катета (по строке на каждый) и печатает гипотенузу. Возьми корень из суммы квадратов через `math.sqrt()` и округли до 2 знаков `round(x, 2)` — печатай ровно то, что вернул round: для 5.0 вывод будет `5.0`, а не `5.00`.",
+      "input_format": "Две строки — целые катеты.",
+      "output_format": "Одно число — округлённый до 2 знаков результат round().",
+      "examples": [
+        {
+          "input": "3\n4",
+          "output": "5.0"
+        }
+      ],
+      "hints": [
+        "c = math.sqrt(a * a + b * b)",
+        "Именно round(c, 2), а не f\"{c:.2f}\" — формат добавит лишние нули.",
+        "Не забудь import math."
+      ],
+      "tests": [
+        {
+          "input": "3\n4",
+          "output": "5.0",
+          "visible": true
+        },
+        {
+          "input": "1\n1",
+          "output": "1.41"
+        },
+        {
+          "input": "5\n12",
+          "output": "13.0"
+        },
+        {
+          "input": "0\n0",
+          "output": "0.0",
+          "note": "граничный случай: нулевой треугольник"
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "math",
+          "sqrt"
+        ]
+      },
+      "solution": "import math\n\na = int(input())\nb = int(input())\nprint(round(math.sqrt(a * a + b * b), 2))",
+      "wrong_solution": "import math\n\na = int(input())\nb = int(input())\nprint(round(math.sqrt(a * a + b * b), 3))"
+    },
+    {
+      "id": "stdlib_t2",
+      "title": "Сколько до субботы",
+      "difficulty": 2,
+      "statement": "Программа читает дату в формате `ДД.ММ.ГГГГ` (например, 05.09.2026). Выведи две строки: `это ДЕНЬ` — название дня недели по-русски в нижнем регистре (понедельник…воскресенье), и `до субботы: N` — сколько дней осталось до ближайшей субботы. Сегодня суббота — 0, воскресенье — 6. Разбирай дату через `datetime.strptime`.",
+      "input_format": "Одна строка — дата в формате ДД.ММ.ГГГГ.",
+      "output_format": "Две строки: `это ...` и `до субботы: ...`.",
+      "examples": [
+        {
+          "input": "05.09.2026",
+          "output": "это суббота\nдо субботы: 0"
+        }
+      ],
+      "hints": [
+        "d = datetime.strptime(input(), \"%d.%m.%Y\"); номер дня даёт d.weekday(): 0=понедельник, 5=суббота, 6=воскресенье.",
+        "Названия удобно хранить списком-константой и брать names[d.weekday()].",
+        "Дни до субботы: (5 - wd) % 7 — остаток от вычитания сам обрабатывает воскресенье и саму субботу."
+      ],
+      "tests": [
+        {
+          "input": "05.09.2026",
+          "output": "это суббота\nдо субботы: 0",
+          "visible": true
+        },
+        {
+          "input": "04.09.2026",
+          "output": "это пятница\nдо субботы: 1"
+        },
+        {
+          "input": "06.09.2026",
+          "output": "это воскресенье\nдо субботы: 6",
+          "note": "граничный случай: воскресенье"
+        },
+        {
+          "input": "07.09.2026",
+          "output": "это понедельник\nдо субботы: 5"
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "datetime",
+          "strptime"
+        ]
+      },
+      "solution": "from datetime import datetime\n\nnames = [\"понедельник\", \"вторник\", \"среда\", \"четверг\", \"пятница\",\n         \"суббота\", \"воскресенье\"]\nd = datetime.strptime(input(), \"%d.%m.%Y\")\nwd = d.weekday()\nprint(f\"это {names[wd]}\")\nprint(f\"до субботы: {(5 - wd) % 7}\")",
+      "wrong_solution": "from datetime import datetime\n\nnames = [\"понедельник\", \"вторник\", \"среда\", \"четверг\", \"пятница\",\n         \"суббота\", \"воскресенье\"]\nd = datetime.strptime(input(), \"%d.%m.%Y\")\nwd = d.weekday()\nprint(f\"это {names[wd]}\")\nprint(f\"до субботы: {5 - wd}\")"
+    },
+    {
+      "id": "stdlib_t3",
+      "title": "Инспектор папки",
+      "difficulty": 3,
+      "statement": "В рабочей папке лежат файлы (в тесте их подсовывает проверка). Программа ничего не читает через input(): обойди текущую папку через `Path(\".\").iterdir()` и напечатай построчно каждый файл в формате `имя (расширение)`, где расширение — из `suffix` (с точкой); у файла без расширения выведи `имя (без расширения)`. Порядок — по алфавиту (сортировка по имени!). Последней строкой — `всего: N`. Формат расширения для двойных: у `a.tar.gz` суффикс `.gz`.",
+      "input_format": "Ввода нет — данные лежат в рабочей папке.",
+      "output_format": "Построчно `имя (расширение)` по алфавиту имён, затем `всего: N`.",
+      "examples": [
+        {
+          "input": "",
+          "output": "для файлов a.txt, b.csv, notes.md:\na.txt (.txt)\nb.csv (.csv)\nnotes.md (.md)\nвсего: 3"
+        }
+      ],
+      "hints": [
+        "files = sorted(Path(\".\").iterdir(), key=lambda p: p.name) — сортируй именно по имени, обход папки сам по себе неупорядочен.",
+        "У каждого Path есть готовые .name и .suffix; пустая строка суффикса — ложь, удобно: p.suffix or \"без расширения\".",
+        "len(files) для итоговой строки."
+      ],
+      "tests": [
+        {
+          "files": {
+            "a.txt": "1",
+            "b.csv": "2",
+            "notes.md": "3"
+          },
+          "output": "a.txt (.txt)\nb.csv (.csv)\nnotes.md (.md)\nвсего: 3",
+          "visible": true
+        },
+        {
+          "files": {
+            "README": "x"
+          },
+          "output": "README (без расширения)\nвсего: 1"
+        },
+        {
+          "files": {},
+          "output": "всего: 0",
+          "note": "граничный случай: пустая папка"
+        },
+        {
+          "files": {
+            "a.tar.gz": "1"
+          },
+          "output": "a.tar.gz (.gz)\nвсего: 1",
+          "note": "двойное расширение: берётся последнее"
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "Path",
+          "iterdir"
+        ]
+      },
+      "solution": "from pathlib import Path\n\nfiles = sorted(Path(\".\").iterdir(), key=lambda p: p.name)\nfor p in files:\n    suffix = p.suffix or \"без расширения\"\n    print(f\"{p.name} ({suffix})\")\nprint(f\"всего: {len(files)}\")",
+      "wrong_solution": "from pathlib import Path\n\nfiles = sorted(Path(\".\").iterdir(), key=lambda p: p.suffix)\nfor p in files:\n    suffix = p.suffix or \"без расширения\"\n    print(f\"{p.name} ({suffix})\")\nprint(f\"всего: {len(files)}\")"
+    }
+  ],
+  "summary": [
+    "random: randint/choice/shuffle; для тестируемости фиксируй random.seed(N).",
+    "math: sqrt, pi, floor/ceil — округление «в пол» и «в потолок».",
+    "datetime: strptime разбирает строку, strftime собирает обратно; разница дат — timedelta.",
+    "pathlib: .name, .suffix, .stem, .exists(), обход папки через iterdir (с самодельной сортировкой!).",
+    "time.perf_counter() — замеры; docs.python.org/3/library — за всем остальным."
+  ],
+  "further": [
+    "docs.python.org/3/library/random.html",
+    "docs.python.org/3/library/datetime.html — шпаргалка по %-кодам strftime"
+  ]
+}
