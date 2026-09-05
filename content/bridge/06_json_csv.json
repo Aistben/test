@@ -1,0 +1,293 @@
+{
+  "id": "json_csv",
+  "stage": "bridge",
+  "order": 6,
+  "title": "JSON и CSV",
+  "subtitle": "Как данные живут в файлах",
+  "minutes": 50,
+  "version": 1,
+  "goals": [
+    "Сохранять и читать словари/списки через json.dumps/loads и json.dump/load",
+    "Читать и писать CSV через csv.reader/DictReader и csv.writer",
+    "Помнить про encoding=\"utf-8\", ensure_ascii=False и newline=\"\"",
+    "Собирать цепочку «прочитали CSV → посчитали → записали JSON»"
+  ],
+  "theory": [
+    {
+      "type": "text",
+      "text": "Данные должны переживать перезапуск программы. Два формата, которые покрывают 90% бытовых задач: JSON — текстовое «дерево» из словарей и списков (его любят API и конфиги), CSV — таблица «одна строка = одна запись, значения через запятую» (его любит Excel). В Python для обоих есть стандартные модули: `json` и `csv`."
+    },
+    {
+      "type": "text",
+      "text": "Модуль `json`: `dumps` превращает объект в строку (s = string), `loads` — обратно. По умолчанию кириллица превращается в `\\u043f`-последовательности; человекочитаемость возвращает `ensure_ascii=False`, а красота — `indent=2`."
+    },
+    {
+      "type": "code",
+      "code": "import json\n\nuser = {\"name\": \"Аня\", \"age\": 30, \"tags\": [\"python\", \"csv\"]}\ntext = json.dumps(user, ensure_ascii=False)\nprint(text)\nback = json.loads(text)\nprint(back[\"name\"])",
+      "output": "{\"name\": \"Аня\", \"age\": 30, \"tags\": [\"python\", \"csv\"]}\nАня",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Для файлов есть те же функции без последней «s»: `json.dump(obj, f)` пишет, `json.load(f)` читает. JSON хранит типы: числа останутся числами, вложенные словари — словарями. Даты и свои классы — нет, только строки."
+    },
+    {
+      "type": "code",
+      "code": "import json\n\ndata = {\"city\": \"Казань\", \"temp\": 18.5}\nwith open(\"weather.json\", \"w\", encoding=\"utf-8\") as f:\n    json.dump(data, f, ensure_ascii=False, indent=2)\n\nwith open(\"weather.json\", encoding=\"utf-8\") as f:\n    loaded = json.load(f)\nprint(loaded[\"temp\"])",
+      "output": "18.5",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "CSV разбирать вручную `split(\";\")` — плохая идея: запятые внутри значений, кавычки... Для этого есть модуль `csv`. `csv.reader` отдаёт построчно списки строк; `csv.DictReader` — словари по заголовку файла. Обращайся к полям по имени — читается лучше."
+    },
+    {
+      "type": "code",
+      "code": "import csv\n\nwith open(\"prices.csv\", \"w\", encoding=\"utf-8\") as f:\n    f.write(\"товар,цена\\nкофе,150\\nчай,80\\n\")\n\nwith open(\"prices.csv\", encoding=\"utf-8\", newline=\"\") as f:\n    for row in csv.DictReader(f):\n        print(row[\"товар\"], int(row[\"цена\"]) * 2)",
+      "output": "кофе 300\nчай 160",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Писать CSV — `csv.writer.writerow([...])`. При открытии файла на запись всегда ставь `newline=\"\"`, иначе на Windows в файл закрадываются пустые строки между записями."
+    },
+    {
+      "type": "code",
+      "code": "import csv\n\nrows = [[\"товар\", \"кол-во\"], [\"хлеб\", 2], [\"сыр\", 3]]\nwith open(\"cart.csv\", \"w\", encoding=\"utf-8\", newline=\"\") as f:\n    writer = csv.writer(f)\n    for row in rows:\n        writer.writerow(row)\nprint(open(\"cart.csv\", encoding=\"utf-8\").read().strip())",
+      "output": "товар,кол-во\r\nхлеб,2\r\nсыр,3",
+      "run_check": true
+    },
+    {
+      "type": "warning",
+      "text": "csv и json при чтении не угадывают типы: все значения из csv — строки, даже «150». Считай сам: `int(row[\"цена\"])`, `float(...)`. И наоборот: если в JSON положить дату `datetime`, dump упадёт — храни даты строками (\"2026-09-05\")."
+    },
+    {
+      "type": "table",
+      "header": [
+        "Операция",
+        "Запись"
+      ],
+      "rows": [
+        [
+          "объект → строка",
+          "json.dumps(obj, ensure_ascii=False, indent=2)"
+        ],
+        [
+          "объект → файл",
+          "json.dump(obj, f, ensure_ascii=False, indent=2)"
+        ],
+        [
+          "CSV-файл → строки-списки",
+          "csv.reader(f, delimiter=';')"
+        ],
+        [
+          "CSV-файл → строки-словари",
+          "csv.DictReader(f)"
+        ],
+        [
+          "список списков → CSV",
+          "csv.writer(f).writerow(row)"
+        ]
+      ]
+    },
+    {
+      "type": "note",
+      "text": "Классический рабочий цикл: CSV на входе → считаешь в словаре → результат пишешь JSON. Открыл файл на чтение — итерируйся по нему; открыл на запись (`\"w\"`) — файл будет перезаписан с нуля, `\"a\"` — дозапись в конец."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "json_csv_t1",
+      "title": "Настройки в JSON",
+      "difficulty": 1,
+      "statement": "Первая строка — число N, следующие N строк — записи вида `ключ=значение` (в значении могут встречаться `=` и пробелы; сама строка — ровно один ключ слева от первого `=`). Собери словарь и сохрани его в файл `settings.json` через `json.dump` с `ensure_ascii=False` и `indent=2`. Ничего не печатай.",
+      "input_format": "N+1 строк: число записей, затем пары ключ=значение.",
+      "output_format": "Файл settings.json. Вывод на экран — пустой.",
+      "examples": [
+        {
+          "input": "2\ntheme=dark\nlang=ru",
+          "output": "settings.json:\n{\n  \"theme\": \"dark\",\n  \"lang\": \"ru\"\n}"
+        }
+      ],
+      "hints": [
+        "Разбивай строку так, чтобы не сломать значение: key, value = line.split(\"=\", 1).",
+        "json.dump(settings, f, ensure_ascii=False, indent=2) — без ensure_ascii кириллица уедет в \\u-последовательности.",
+        "N=0: словарь пустой, в файле должно быть {}, и это тоже dump, а не ручная запись."
+      ],
+      "tests": [
+        {
+          "input": "2\ntheme=dark\nlang=ru",
+          "output": "",
+          "visible": true,
+          "output_files": {
+            "settings.json": "{\n  \"theme\": \"dark\",\n  \"lang\": \"ru\"\n}"
+          }
+        },
+        {
+          "input": "0",
+          "output": "",
+          "output_files": {
+            "settings.json": "{}"
+          },
+          "note": "граничный случай: ноль записей"
+        },
+        {
+          "input": "1\nurl=http://site/?a=b",
+          "output": "",
+          "output_files": {
+            "settings.json": "{\n  \"url\": \"http://site/?a=b\"\n}"
+          },
+          "note": "значение содержит ="
+        },
+        {
+          "input": "1\nрежим=тест",
+          "output": "",
+          "output_files": {
+            "settings.json": "{\n  \"режим\": \"тест\"\n}"
+          },
+          "note": "кириллица должна остаться читаемой"
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "json",
+          "dump"
+        ]
+      },
+      "solution": "import json\n\nn = int(input())\nsettings = {}\nfor _ in range(n):\n    key, value = input().split(\"=\", 1)\n    settings[key] = value\nwith open(\"settings.json\", \"w\", encoding=\"utf-8\") as f:\n    json.dump(settings, f, ensure_ascii=False, indent=2)",
+      "wrong_solution": "import json\n\nn = int(input())\nsettings = {}\nfor _ in range(n):\n    key, value = input().split(\"=\", 1)\n    settings[key] = value\nwith open(\"settings.json\", \"w\", encoding=\"utf-8\") as f:\n    json.dump(settings, f)"
+    },
+    {
+      "id": "json_csv_t2",
+      "title": "Товары из CSV",
+      "difficulty": 2,
+      "statement": "В файле `data.csv` — цены товаров в формате `товар;цена;кол` (разделитель — точка с запятой, первая строка — заголовок; цена — дробное число). Для каждой строки напечатай `товар x кол = сумма`, где сумма = цена × количество с двумя знаками после точки. Последней строкой — `итого: S` (сумма всех строк, тоже два знака). Читай через `csv.reader` с delimiter=';'.",
+      "input_format": "Ввода нет, данные в файле data.csv.",
+      "output_format": "Строк по числу записей + строка `итого: S`, суммы через ':.2f'.",
+      "examples": [
+        {
+          "input": "",
+          "output": "для 'товар;цена;кол\\nхлеб;45.5;2\\nмолоко;89.9;1\\n':\nхлеб x 2 = 91.00\nмолоко x 1 = 89.90\nитого: 180.90"
+        }
+      ],
+      "hints": [
+        "reader = csv.reader(f, delimiter=\";\"); заголовок пропусти: next(reader).",
+        "Цены из CSV — строки! float(price) и int(qty) перед умножением.",
+        "Копи итог в переменную total и форматируй всё через :.2f."
+      ],
+      "tests": [
+        {
+          "files": {
+            "data.csv": "товар;цена;кол\nхлеб;45.5;2\nмолоко;89.9;1\n"
+          },
+          "output": "хлеб x 2 = 91.00\nмолоко x 1 = 89.90\nитого: 180.90",
+          "visible": true
+        },
+        {
+          "files": {
+            "data.csv": "товар;цена;кол\n"
+          },
+          "output": "итого: 0.00",
+          "note": "граничный случай: только заголовок"
+        },
+        {
+          "files": {
+            "data.csv": "товар;цена;кол\nсыр;199.99;3\n"
+          },
+          "output": "сыр x 3 = 599.97\nитого: 599.97"
+        },
+        {
+          "files": {
+            "data.csv": "товар;цена;кол\nвода;50;10\n"
+          },
+          "output": "вода x 10 = 500.00\nитого: 500.00"
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "csv"
+        ]
+      },
+      "solution": "import csv\n\ntotal = 0.0\nwith open(\"data.csv\", encoding=\"utf-8\", newline=\"\") as f:\n    reader = csv.reader(f, delimiter=\";\")\n    next(reader)\n    for name, price, qty in reader:\n        s = float(price) * int(qty)\n        total += s\n        print(f\"{name} x {qty} = {s:.2f}\")\nprint(f\"итого: {total:.2f}\")",
+      "wrong_solution": "import csv\n\ntotal = 0.0\nwith open(\"data.csv\", encoding=\"utf-8\", newline=\"\") as f:\n    reader = csv.reader(f, delimiter=\";\")\n    for name, price, qty in reader:\n        s = float(price) * int(qty)\n        total += s\n        print(f\"{name} x {qty} = {s:.2f}\")\nprint(f\"итого: {total:.2f}\")"
+    },
+    {
+      "id": "json_csv_t3",
+      "title": "Итоги продаж в JSON",
+      "difficulty": 3,
+      "statement": "В файле `sales.csv` строки вида `товар;количество;цена` (первая строка — заголовок; количество — целое, цена — дробное; одинаковые товары могут повторяться). Посчитай выручку по каждому товару (сумма «количество × цена» по всем его строкам) и запиши результат в `report.json` как словарь {товар: выручка}, отсортированный по названию товара, с отступом 2 и кириллицей как есть. Выручку округли до 2 знаков. Ничего не печатай.",
+      "input_format": "Ввода нет. Данные — в файле sales.csv в рабочей папке.",
+      "output_format": "Файл report.json.",
+      "examples": [
+        {
+          "input": "sales.csv:\nтовар;количество;цена\nКофе;2;150\nЧай;1;80\nКофе;1;150",
+          "output": "report.json:\n{\n  \"Кофе\": 450.0,\n  \"Чай\": 80.0\n}"
+        }
+      ],
+      "hints": [
+        "csv.reader(f, delimiter=';'), первую строку пропусти через next(reader).",
+        "Копи суммы в словаре: totals[name] = totals.get(name, 0) + qty * price.",
+        "json.dump(dict(sorted(totals.items())), f, ensure_ascii=False, indent=2)."
+      ],
+      "tests": [
+        {
+          "files": {
+            "sales.csv": "товар;количество;цена\nКофе;2;150\nЧай;1;80\nКофе;1;150\n"
+          },
+          "output_files": {
+            "report.json": "{\n  \"Кофе\": 450.0,\n  \"Чай\": 80.0\n}"
+          },
+          "output": "",
+          "visible": true
+        },
+        {
+          "files": {
+            "sales.csv": "товар;количество;цена\n"
+          },
+          "output_files": {
+            "report.json": "{}"
+          },
+          "output": ""
+        },
+        {
+          "files": {
+            "sales.csv": "товар;количество;цена\nБулка;3;33.33\n"
+          },
+          "output_files": {
+            "report.json": "{\n  \"Булка\": 99.99\n}"
+          },
+          "output": ""
+        },
+        {
+          "files": {
+            "sales.csv": "товар;количество;цена\nЧай;2;80\nКофе;1;150\nЧай;1;80\n"
+          },
+          "output_files": {
+            "report.json": "{\n  \"Кофе\": 150.0,\n  \"Чай\": 240.0\n}"
+          },
+          "output": "",
+          "note": "сортировка по названию, не по сумме"
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "csv",
+          "json"
+        ]
+      },
+      "solution": "import csv\nimport json\n\ntotals = {}\nwith open(\"sales.csv\", encoding=\"utf-8\", newline=\"\") as f:\n    reader = csv.reader(f, delimiter=\";\")\n    next(reader)\n    for name, qty, price in reader:\n        totals[name] = totals.get(name, 0) + int(qty) * float(price)\n\nresult = {k: round(v, 2) for k, v in sorted(totals.items())}\nwith open(\"report.json\", \"w\", encoding=\"utf-8\") as f:\n    json.dump(result, f, ensure_ascii=False, indent=2)",
+      "wrong_solution": "import csv\nimport json\n\ntotals = {}\nwith open(\"sales.csv\", encoding=\"utf-8\") as f:\n    reader = csv.reader(f, delimiter=\";\")\n    next(reader)\n    for name, qty, price in reader:\n        totals[name] = int(qty) * float(price)\nwith open(\"report.json\", \"w\", encoding=\"utf-8\") as f:\n    json.dump(totals, f, ensure_ascii=False, indent=2)"
+    }
+  ],
+  "summary": [
+    "json.dump(s)/load(s): dumps/loads — строка, dump/load — файл; ensure_ascii=False и indent=2 для читаемости.",
+    "csv.reader/DictReader читают, csv.writer/DictWriter пишут; разделитель задавай явно (delimiter=';').",
+    "Файлы с текстом — только с encoding=\"utf-8\"; CSV на запись — ещё и newline=\"\".",
+    "CSV отдаёт строки: превращай в int/float сам; JSON типы помнит, но даты и свои классы — нет.",
+    "Паттерн дня: CSV → словарь-агрегатор → отсортированный JSON."
+  ],
+  "further": [
+    "docs.python.org/3/library/json.html",
+    "docs.python.org/3/library/csv.html"
+  ]
+}
