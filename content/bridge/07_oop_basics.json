@@ -1,0 +1,272 @@
+{
+  "id": "oop_basics",
+  "stage": "bridge",
+  "order": 7,
+  "title": "Основы ООП",
+  "subtitle": "Читать чужой код с классами — уже победа",
+  "minutes": 55,
+  "version": 1,
+  "goals": [
+    "Объяснять словами: класс, объект, атрибут, метод",
+    "Писать простые классы с __init__, self и методами",
+    "Задавать человеческий вид объекта через __str__",
+    "Понимать наследование и super().__init__ при чтении чужого кода"
+  ],
+  "theory": [
+    {
+      "type": "text",
+      "text": "Класс (class) — это «чертёж»: он описывает, какие данные хранит объект и что умеет с ними делать. Пока что ты носил данные в связках «словарь + отдельные функции». Класс объединяет их в одном месте: у товара есть и цена, и способ посчитать скидку. Твоя цель на этом этапе — уверенно ПИСАТЬ простые классы и ЧИТАТЬ чужие: на них построен почти весь реальный код."
+    },
+    {
+      "type": "code",
+      "code": "class Product:\n    def __init__(self, name, price):\n        self.name = name\n        self.price = price\n\n    def cost(self, qty):\n        return self.price * qty\n\n\nbread = Product(\"Хлеб\", 45)\nprint(bread.name)\nprint(bread.cost(3))",
+      "output": "Хлеб\n135",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "`Product(\"Хлеб\", 45)` создаёт объект (экземпляр) класса. `__init__` — метод-конструктор: вызывается автоматически при создании и принимает данные. Присваивание `self.name = name` сохраняет значение ВНУТРЬ объекта — без self переменная жила бы только время работы метода и исчезла бы."
+    },
+    {
+      "type": "warning",
+      "text": "Первый параметр метода — это сам объект. По соглашению его называют `self` и не передают явно: когда пишешь `bread.cost(3)`, Python незаметно вызывает `Product.cost(bread, 3)`. Забыл self в def — получишь TypeError: takes 1 positional argument but 2 were given. Само имя self — не закон, но нарушать соглашение нельзя: его читают все."
+    },
+    {
+      "type": "text",
+      "text": "Объектов одного класса может быть сколько угодно — данные у каждого свои. Методы читают и меняют именно «свой» объект через self."
+    },
+    {
+      "type": "code",
+      "code": "class Account:\n    def __init__(self, owner, balance=0):\n        self.owner = owner\n        self.balance = balance\n\n    def add(self, money):\n        self.balance += money\n\n\na = Account(\"Аня\", 100)\nb = Account(\"Борис\")\na.add(50)\nprint(a.balance, b.balance)",
+      "output": "150 0",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Магический метод `__str__` отвечает на вопрос «как объект выглядит в print()». Без него будет `Account object at 0x7f...` — программисты называют это «шум». Возвращай из __str__ человекочитаемую строку."
+    },
+    {
+      "type": "code",
+      "code": "class Dog:\n    def __init__(self, name, breed):\n        self.name = name\n        self.breed = breed\n\n    def __str__(self):\n        return f\"Собака {self.name} ({self.breed})\"\n\n\nprint(Dog(\"Рекс\", \"овчарка\"))",
+      "output": "Собака Рекс (овчарка)",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Наследование (inheritance): новый класс берёт всё у существующего и добавляет своё. Скобки `Puppy(Dog)` означают «как Dog, но лучше». `super().__init__(...)` — обращение к родителю: не переписывать его конструктор руками, а доверить ему общее и дописать своё. Переопределение метода (у Puppy свой __str__) заменяет родительскую версию."
+    },
+    {
+      "type": "code",
+      "code": "class Dog:\n    def __init__(self, name, breed):\n        self.name = name\n        self.breed = breed\n\n    def voice(self):\n        return \"гав\"\n\n\nclass Puppy(Dog):\n    def __init__(self, name, breed, months):\n        super().__init__(name, breed)\n        self.months = months\n\n    def voice(self):\n        return \"тяв\"\n\n\nrex = Puppy(\"Джесси\", \"лабрадор\", 4)\nprint(rex.voice(), rex.months, rex.breed)",
+      "output": "тяв 4 лабрадор",
+      "run_check": true
+    },
+    {
+      "type": "table",
+      "header": [
+        "Термин",
+        "По-русски",
+        "В коде"
+      ],
+      "rows": [
+        [
+          "класс (class)",
+          "чертёж объекта",
+          "class Product:"
+        ],
+        [
+          "объект (экземпляр)",
+          "конкретная штука по чертежу",
+          "bread = Product(...)"
+        ],
+        [
+          "атрибут",
+          "данные внутри объекта",
+          "self.price"
+        ],
+        [
+          "метод",
+          "функция внутри объекта",
+          "def cost(self, qty)"
+        ],
+        [
+          "__init__",
+          "создание и настройка объекта",
+          "вызывается сам при Product(...)"
+        ],
+        [
+          "self",
+          "сам объект внутри метода",
+          "self.name = name"
+        ]
+      ]
+    },
+    {
+      "type": "compare",
+      "title": "Словарь+функции против класса",
+      "bad": "cat = {\"name\": \"Барсик\", \"age\": 3}\n\n\ndef cat_say(cat):\n    return f\"{cat['name']} говорит: мяу\"\n\n\nprint(cat_say(cat))",
+      "good": "class Cat:\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n\n    def say(self):\n        return f\"{self.name} говорит: мяу\"\n\n\nprint(Cat(\"Барсик\", 3).say())"
+    },
+    {
+      "type": "note",
+      "text": "Зачем «просто данные» тащить в класс? Потому что вместе с данными живёт логика: данные и операции рядом не разъедутся и не перепутаются. Но класс ради класса — зло: три числа удобнее сложить обычным кортежем. Класс нужен, когда появляется поведение."
+    },
+    {
+      "type": "text",
+      "text": "Глубокие темы (property, магические методы кроме __str__, метаклассы) — потом. Сейчас достаточно свободно читать определения класса, понимать, кто кому родитель, и писать свой класс из 5–10 строк без страхов."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "oop_basics_t1",
+      "title": "Карточка пользователя",
+      "difficulty": 1,
+      "statement": "Определи класс `User` с конструктором `__init__(self, name, email)` (поля сохранить в атрибуты name и email) и методом `info()`, который ВОЗВРАЩАЕТ строку вида `Аня <anya@mail.ru>` — имя, пробел, email в угловых скобках. Печатать ничего не нужно: проверка сама создаст объекты и вызовет методы через print().",
+      "input_format": "Ввода нет.",
+      "output_format": "Ничего не печатать. Определить класс User.",
+      "examples": [
+        {
+          "input": "",
+          "output": "print(User(\"Аня\", \"anya@mail.ru\").info()) -> Аня <anya@mail.ru>"
+        }
+      ],
+      "hints": [
+        "В __init__ обязательно self: def __init__(self, name, email):",
+        "info(self) возвращает, а не печатает: return f\"{self.name} <{self.email}>\".",
+        "Методы пишутся с отступом внутри класса, на одном уровне с __init__."
+      ],
+      "tests": [
+        {
+          "code_after": "print(User(\"Аня\", \"anya@mail.ru\").info())",
+          "output": "Аня <anya@mail.ru>",
+          "visible": true
+        },
+        {
+          "code_after": "u = User(\"Борис\", \"\")\nprint(u.info())",
+          "output": "Борис <>",
+          "note": "граничный случай: пустой email"
+        },
+        {
+          "code_after": "v = User(\"Вера\", \"v@ya.ru\")\nprint(v.name, \"-\", v.email)",
+          "output": "Вера - v@ya.ru",
+          "note": "проверка атрибутов"
+        },
+        {
+          "code_after": "a = User(\"А\", \"a@a\")\nb = User(\"Б\", \"b@b\")\nprint(a.email, b.name)",
+          "output": "a@a Б"
+        }
+      ],
+      "checks": {
+        "must_define": [
+          "User"
+        ]
+      },
+      "solution": "class User:\n    def __init__(self, name, email):\n        self.name = name\n        self.email = email\n\n    def info(self):\n        return f\"{self.name} <{self.email}>\"",
+      "wrong_solution": "class User:\n    def __init__(self, name, email):\n        self.name = name\n        self.email = email\n\n    def info(self):\n        return f\"{self.name} ({self.email})\""
+    },
+    {
+      "id": "oop_basics_t2",
+      "title": "Банковский счёт",
+      "difficulty": 2,
+      "statement": "Определи класс `BankAccount`: конструктор `__init__(self, owner, balance=0)` (баланс по умолчанию 0); метод `deposit(self, money)` — пополняет; `withdraw(self, money)` — снимает и возвращает True, но если денег не хватает (money > balance), баланс НЕ меняет и возвращает False; `__str__` — строка `Владелец: N руб.`. Проверка сама построит счёт, погоняет операции и напечатает результаты через print().",
+      "input_format": "Ввода нет.",
+      "output_format": "Ничего не печатать. Определить класс BankAccount.",
+      "examples": [
+        {
+          "input": "",
+          "output": "acc = BankAccount(\"Аня\", 100); acc.deposit(50)\nprint(acc.withdraw(200), acc.withdraw(30), acc) -> False True Аня: 120 руб."
+        }
+      ],
+      "hints": [
+        "withdraw: сначала проверка if money > self.balance: return False, только потом списание.",
+        "return внутри if прерывает метод — остаток не тронется, если ставить проверку ДО списания.",
+        "__str__ возвращает f-строку: деньги целые — печатать их как int, без .0."
+      ],
+      "tests": [
+        {
+          "code_after": "acc = BankAccount(\"Аня\", 100)\nacc.deposit(50)\nprint(acc.withdraw(200))\nprint(acc.withdraw(30))\nprint(acc)",
+          "output": "False\nTrue\nАня: 120 руб.",
+          "visible": true
+        },
+        {
+          "code_before": "",
+          "code_after": "a = BankAccount(\"Борис\")\na.deposit(10)\nprint(a.balance)\nprint(a.withdraw(10))",
+          "output": "10\nTrue",
+          "note": "balance по умолчанию 0"
+        },
+        {
+          "code_before": "",
+          "code_after": "b = BankAccount(\"В\", 50)\nprint(b.withdraw(50), b.balance)",
+          "output": "True 0",
+          "note": "сняли ровно всё — это не 'нехватка'"
+        }
+      ],
+      "checks": {
+        "must_define": [
+          "BankAccount"
+        ]
+      },
+      "solution": "class BankAccount:\n    def __init__(self, owner, balance=0):\n        self.owner = owner\n        self.balance = balance\n\n    def deposit(self, money):\n        self.balance += money\n\n    def withdraw(self, money):\n        if money > self.balance:\n            return False\n        self.balance -= money\n        return True\n\n    def __str__(self):\n        return f\"{self.owner}: {self.balance} руб.\"",
+      "wrong_solution": "class BankAccount:\n    def __init__(self, owner, balance=0):\n        self.owner = owner\n        self.balance = balance\n\n    def deposit(self, money):\n        self.balance += money\n\n    def withdraw(self, money):\n        self.balance -= money\n        if self.balance < 0:\n            return False\n        return True\n\n    def __str__(self):\n        return f\"{self.owner}: {self.balance} руб.\""
+    },
+    {
+      "id": "oop_basics_t3",
+      "title": "Заказы с доставкой",
+      "difficulty": 3,
+      "statement": "Первая строка — число N заказов. Дальше N строк вида `номер,сумма` (сумма — целое число рублей). Определи класс `Order` с полями num и total и методом `to_pay()`: возвращает сумму к оплате; если total меньше 1000, добавь 200 за доставку, иначе доставка бесплатная. Программа печатает по заказу в строку: `Заказ НОМЕР: S руб.` (S — to_pay()), а последней строкой `Всего к оплате: G руб.` — сумму всех S. Обход и печать — через список объектов Order, не через словарь.",
+      "input_format": "Строка 1 — N (0–100). Строки 2..N+1 — `номер,сумма`.",
+      "output_format": "N строк `Заказ ...: ... руб.` и финальная `Всего к оплате: ... руб.`.",
+      "examples": [
+        {
+          "input": "2\nA1,1500\nB2,900",
+          "output": "Заказ A1: 1500 руб.\nЗаказ B2: 1100 руб.\nВсего к оплате: 2600 руб."
+        }
+      ],
+      "hints": [
+        "to_pay: if self.total < 1000: return self.total + 200 / else return self.total. Строго меньше: 1000 уже бесплатно.",
+        "Читай в список объектов: orders.append(Order(num, int(total))).",
+        "Копируй S в переменную grand по ходу печати, иначе придётся вызывать to_pay() дважды."
+      ],
+      "tests": [
+        {
+          "input": "2\nA1,1500\nB2,900",
+          "output": "Заказ A1: 1500 руб.\nЗаказ B2: 1100 руб.\nВсего к оплате: 2600 руб.",
+          "visible": true
+        },
+        {
+          "input": "1\nC3,1000",
+          "output": "Заказ C3: 1000 руб.\nВсего к оплате: 1000 руб.",
+          "note": "ровно 1000 — доставка бесплатна"
+        },
+        {
+          "input": "0",
+          "output": "Всего к оплате: 0 руб.",
+          "note": "граничный случай: нет заказов"
+        },
+        {
+          "input": "3\nX,0\nY,800\nZ,2000",
+          "output": "Заказ X: 200 руб.\nЗаказ Y: 1000 руб.\nЗаказ Z: 2000 руб.\nВсего к оплате: 3200 руб."
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "class",
+          "def"
+        ]
+      },
+      "solution": "class Order:\n    def __init__(self, num, total):\n        self.num = num\n        self.total = total\n\n    def to_pay(self):\n        if self.total < 1000:\n            return self.total + 200\n        return self.total\n\n\nn = int(input())\norders = []\nfor _ in range(n):\n    num, amount = input().split(\",\")\n    orders.append(Order(num, int(amount)))\n\ngrand = 0\nfor o in orders:\n    pay = o.to_pay()\n    grand += pay\n    print(f\"Заказ {o.num}: {pay} руб.\")\nprint(f\"Всего к оплате: {grand} руб.\")",
+      "wrong_solution": "class Order:\n    def __init__(self, num, total):\n        self.num = num\n        self.total = total\n\n    def to_pay(self):\n        if self.total <= 1000:\n            return self.total + 200\n        return self.total\n\n\nn = int(input())\norders = []\nfor _ in range(n):\n    num, amount = input().split(\",\")\n    orders.append(Order(num, int(amount)))\n\ngrand = 0\nfor o in orders:\n    pay = o.to_pay()\n    grand += pay\n    print(f\"Заказ {o.num}: {pay} руб.\")\nprint(f\"Всего к оплате: {grand} руб.\")"
+    }
+  ],
+  "summary": [
+    "Класс — чертёж, объект — экземпляр; __init__ вызывается автоматически при создании.",
+    "Данные живут в атрибутах (self.что), поведение — в методах; self — сам объект, его не передают.",
+    "__str__ делает print(obj) человекочитаемым.",
+    "Наследование: class Child(Parent) + super().__init__(...) — переиспользуем и переопределяем.",
+    "Не бери класс, если хватает функций и словаря; бери, когда данные и поведение должны жить вместе."
+  ],
+  "further": [
+    "docs.python.org/3/tutorial/classes.html",
+    "Stepik «Поколение Python: курс для продвинутых», модуль «Классы»"
+  ]
+}
