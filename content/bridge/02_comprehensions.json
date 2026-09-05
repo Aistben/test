@@ -1,0 +1,267 @@
+{
+  "id": "comprehensions",
+  "stage": "bridge",
+  "order": 2,
+  "title": "Списковые включения, enumerate, zip",
+  "subtitle": "Короткие строки вместо трёхэтажных циклов",
+  "minutes": 50,
+  "version": 1,
+  "goals": [
+    "Писать списковые включения с условием вместо цикла с append",
+    "Строить словари через dict comprehension",
+    "Нумеровать элементы enumerate() и проходиться по двум спискам zip()",
+    "Сортировать и искать максимум по ключу: sorted(key=...), max(key=...)"
+  ],
+  "theory": [
+    {
+      "type": "text",
+      "text": "Частая задача: взять список и сделать из него другой — каждый элемент преобразовать, часть отфильтровать. Классический цикл с `append` занимает четыре строки. Списковое включение (list comprehension) делает то же одной — и читается это обычно лучше."
+    },
+    {
+      "type": "code",
+      "code": "nums = [1, 2, 3, 4, 5]\n\nsquares_loop = []\nfor n in nums:\n    squares_loop.append(n ** 2)\n\nsquares = [n ** 2 for n in nums]\n\nprint(squares)\nprint(squares == squares_loop)",
+      "output": "[1, 4, 9, 16, 25]\nTrue",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Читай включение справа налево: «для каждого `n` из `nums` положить `n ** 2`». Условие (фильтр) дописывается в конце: `if` после `for` оставляет только подходящие элементы."
+    },
+    {
+      "type": "code",
+      "code": "prices = [100, 45, 250, 30, 80]\nbig = [p for p in prices if p >= 100]\n\nprint(big)",
+      "output": "[100, 250]",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Так же строятся словарь и множество: `dict comprehension` — «ключ: значение for ...», множество — фигурные скобки без двоеточия."
+    },
+    {
+      "type": "code",
+      "code": "words = [\"кот\", \"олень\", \"ёж\"]\nlengths = {w: len(w) for w in words}\nlong_set = {w for w in words if len(w) > 2}\n\nprint(lengths)",
+      "output": "{'кот': 3, 'олень': 5, 'ёж': 2}",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "`enumerate()` нумерует элементы при переборе — вместо ручных счётчиков и `range(len(...))`. Параметр `start` задаёт, с какого числа начинать нумерацию."
+    },
+    {
+      "type": "code",
+      "code": "files = [\"report.pdf\", \"photo.jpg\", \"notes.txt\"]\nfor i, name in enumerate(files, start=1):\n    print(f\"{i}. {name}\")",
+      "output": "1. report.pdf\n2. photo.jpg\n3. notes.txt",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "`zip()` проходит по двум (и более) последовательностям параллельно: на каждом шаге выдаёт кортеж из соседних элементов. Если длины разные, `zip` остановится на короткой. В связке `dict(zip(...))` из двух списков мгновенно получается словарь."
+    },
+    {
+      "type": "code",
+      "code": "names = [\"Аня\", \"Боря\", \"Вера\"]\nscores = [12, 9, 15]\ntable = dict(zip(names, scores))\n\nprint(table)",
+      "output": "{'Аня': 12, 'Боря': 9, 'Вера': 15}",
+      "run_check": true
+    },
+    {
+      "type": "text",
+      "text": "Сортировка по ключу: `sorted()` умеет сама доставать то, по чему сортировать. Аргумент `key` — функция, которая получает элемент и возвращает «вес» для сравнения. Обычно это `len` или короткая `lambda`. `lambda x: x[1]` — безымянная функция из одной строки, здесь она только как подсказка для `key`."
+    },
+    {
+      "type": "code",
+      "code": "words = [\"сыр\", \"молоко\", \"хлеб\"]\nprint(sorted(words, key=len))\nprint(sorted(words, key=len, reverse=True))",
+      "output": "['сыр', 'хлеб', 'молоко']\n['молоко', 'хлеб', 'сыр']",
+      "run_check": true
+    },
+    {
+      "type": "code",
+      "code": "team = [(\"Аня\", 42), (\"Боря\", 38), (\"Вера\", 45)]\n\nbest = max(team, key=lambda member: member[1])\nworst = min(team, key=lambda member: member[1])\nprint(best)\nprint(worst)",
+      "output": "('Вера', 45)\n('Боря', 38)",
+      "run_check": true
+    },
+    {
+      "type": "warning",
+      "text": "Не используй включение ради побочного эффекта: `[print(x) for x in items]` — плохой стиль, это цикл, замаскированный под выражение. Включение для того и существует, чтобы СОЗДАВАТЬ список. Если после `for` у тебя `append`, `print` или присваивание — пиши обычный цикл."
+    },
+    {
+      "type": "table",
+      "header": [
+        "Запись",
+        "Что строит"
+      ],
+      "rows": [
+        [
+          "[x * 2 for x in xs if x > 0]",
+          "список"
+        ],
+        [
+          "{x for x in xs}",
+          "множество (уникальные)"
+        ],
+        [
+          "{k: len(v) for k, v in d.items()}",
+          "словарь"
+        ]
+      ]
+    },
+    {
+      "type": "note",
+      "text": "Если включение не читается с одного взгляда (два `for`, два `if`) — разбей на обычный цикл. Экономия строк не должна превращать код в шараду."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "comprehensions_t1",
+      "title": "Квадраты чётных",
+      "difficulty": 1,
+      "statement": "Программа читает одну строку — целые числа через пробел. Выведи в одну строку квадраты только чётных чисел, в исходном порядке, через пробел. Ноль — чётное. Если чётных чисел нет, выведи пустую строку. Решается одним включением (числа тоже читай включением).",
+      "input_format": "Одна строка с целыми числами через пробел.",
+      "output_format": "Одна строка: квадраты чётных чисел через пробел (или пустая строка).",
+      "examples": [
+        {
+          "input": "1 2 3 4 5 6",
+          "output": "4 16 36"
+        }
+      ],
+      "hints": [
+        "Сначала числа: nums = [int(x) for x in input().split()].",
+        "Потом квадраты с фильтром: [n ** 2 for n in nums if n % 2 == 0].",
+        "Склей вывод: \" \".join(str(s) for s in squares). Пустой список даст пустую строку — так и надо."
+      ],
+      "tests": [
+        {
+          "input": "1 2 3 4 5 6",
+          "output": "4 16 36",
+          "visible": true
+        },
+        {
+          "input": "7 9 11",
+          "output": "",
+          "note": "нет чётных — пустая строка"
+        },
+        {
+          "input": "-4 -3 0",
+          "output": "16 0"
+        },
+        {
+          "input": "2",
+          "output": "4"
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "for",
+          "if"
+        ],
+        "must_not_use": [
+          "append"
+        ]
+      },
+      "solution": "nums = [int(x) for x in input().split()]\nsquares = [n ** 2 for n in nums if n % 2 == 0]\nprint(\" \".join(str(s) for s in squares))",
+      "wrong_solution": "nums = [int(x) for x in input().split()]\nsquares = [n ** 2 for n in nums]\nprint(\" \".join(str(s) for s in squares))"
+    },
+    {
+      "id": "comprehensions_t2",
+      "title": "Меню по номерам",
+      "difficulty": 2,
+      "statement": "В первой строке — число N (0–20), дальше N строк — блюда. Выведи меню с нумерацией, начиная с 1, в формате `1) борщ`, и последнюю строку `всего: N`. Чтение блюд сделай списковым включением, нумерацию — через `enumerate` с параметром `start`.",
+      "input_format": "Сначала строка с числом N, затем N строк с названиями блюд.",
+      "output_format": "N строк вида `номер) блюдо`, затем строка `всего: N`.",
+      "examples": [
+        {
+          "input": "3\nборщ\nпицца\nкомпот",
+          "output": "1) борщ\n2) пицца\n3) компот\nвсего: 3"
+        }
+      ],
+      "hints": [
+        "Список блюд: dishes = [input() for _ in range(n)].",
+        "enumerate(dishes, start=1) отдаёт пары (номер, блюдо) — номер начнётся с 1.",
+        "Формат строки: f\"{i}) {dish}\"."
+      ],
+      "tests": [
+        {
+          "input": "3\nборщ\nпицца\nкомпот",
+          "output": "1) борщ\n2) пицца\n3) компот\nвсего: 3",
+          "visible": true
+        },
+        {
+          "input": "1\nчай",
+          "output": "1) чай\nвсего: 1"
+        },
+        {
+          "input": "0",
+          "output": "всего: 0",
+          "note": "граничный случай: пустое меню"
+        },
+        {
+          "input": "2\na\nb",
+          "output": "1) a\n2) b\nвсего: 2"
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "enumerate"
+        ]
+      },
+      "solution": "n = int(input())\ndishes = [input() for _ in range(n)]\nfor i, dish in enumerate(dishes, start=1):\n    print(f\"{i}) {dish}\")\nprint(f\"всего: {n}\")",
+      "wrong_solution": "n = int(input())\ndishes = [input() for _ in range(n)]\nfor i, dish in enumerate(dishes):\n    print(f\"{i}) {dish}\")\nprint(f\"всего: {n}\")"
+    },
+    {
+      "id": "comprehensions_t3",
+      "title": "Частота слов",
+      "difficulty": 3,
+      "statement": "Программа читает одну строку — слова через пробел. Посчитай, сколько раз встретилось каждое слово, и выведи построчно в формате `слово: количество`, отсортировав слова по алфавиту. Словарь частот построй через dict comprehension (в виде `{w: words.count(w) for w in set(words)}`), перебор — по `sorted` ключам.",
+      "input_format": "Одна строка со словами через пробел.",
+      "output_format": "По строке на каждое уникальное слово: `слово: количество`, по алфавиту.",
+      "examples": [
+        {
+          "input": "кот пёс кот кот волк",
+          "output": "волк: 1\nкот: 3\nпёс: 1"
+        }
+      ],
+      "hints": [
+        "words.count(w) считает вхождения, а set(words) даёт только уникальные слова.",
+        "counts = {w: words.count(w) for w in set(words)}.",
+        "Не печатай словарь напрямую (в нём «случайный» порядок обхода множества): пройтись нужно по sorted(counts)."
+      ],
+      "tests": [
+        {
+          "input": "кот пёс кот кот волк",
+          "output": "волк: 1\nкот: 3\nпёс: 1",
+          "visible": true
+        },
+        {
+          "input": "да да да",
+          "output": "да: 3"
+        },
+        {
+          "input": "раз",
+          "output": "раз: 1"
+        },
+        {
+          "input": "а б а б а",
+          "output": "а: 3\nб: 2"
+        }
+      ],
+      "checks": {
+        "must_use": [
+          "sorted",
+          "for"
+        ]
+      },
+      "solution": "words = input().split()\ncounts = {w: words.count(w) for w in set(words)}\nfor w in sorted(counts):\n    print(f\"{w}: {counts[w]}\")",
+      "wrong_solution": "words = input().split()\ncounts = {w: words.count(w) for w in words}\nfor w in counts:\n    print(f\"{w}: {counts[w]}\")"
+    }
+  ],
+  "summary": [
+    "Включение `[выражение for x in xs if условие]` заменяет цикл с append.",
+    "dict comprehension строит словарь, `{x for x in ...}` — множество.",
+    "enumerate(start=1) — нумерация, zip — параллельный перебор, dict(zip(...)) — словарь из двух списков.",
+    "sorted(key=...) и max/min(key=...) сортируют и ищут по «весу»; lambda здесь уместна как значение key.",
+    "Включение ради печати — антипаттерн; сложное включение — разбивай циклом."
+  ],
+  "further": [
+    "docs.python.org/3/tutorial/datastructures.html — раздел List Comprehensions",
+    "Stepik «Поколение Python: курс для продвинутых», модуль «Генераторы списков»"
+  ]
+}
