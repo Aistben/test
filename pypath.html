@@ -491,6 +491,20 @@ details.hints li .inline-code { background: rgba(255, 255, 255, 0.06); color: #f
 .lesson-item.locked { cursor: not-allowed; }
 .lesson-item.locked:hover { background: none; }
 
+/* ---------- v4: объяснение проверки ---------- */
+.tests-note {
+  font-size: 12px; color: var(--muted); margin: 0 0 8px; padding: 7px 11px;
+  background: var(--bg-code); border: 1px solid var(--bd); border-radius: 9px;
+}
+.tests-note b { color: var(--fg, #dce7f5); }
+.test-row .t-io { font-size: 11.5px; color: var(--muted); margin-left: 8px; font-family: var(--mono); }
+.test-row .t-detail.muted2 { opacity: .8; }
+.coach {
+  margin-top: 10px; padding: 10px 14px; font-size: 13.5px; line-height: 1.55;
+  color: #ffe9c4; background: #2a2313; border: 1px solid #6b5320;
+  border-left: 3px solid #e0a93c; border-radius: 10px;
+}
+
 </style>
 </head>
 <body>
@@ -551,7 +565,7 @@ window.PypathCore = (function () {
 })();
 
 window.PY_TRAINER_DATA = {
- "built": "2026-09-05 10:40",
+ "built": "2026-09-05 10:52",
  "pyodide": {
   "version": "0.26.4",
   "cdn": "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/"
@@ -3682,27 +3696,62 @@ function renderResults(out, res) {
   if (res.checks_failed && res.checks_failed.length) {
     res.checks_failed.forEach(msg => out.appendChild(el("div", "checks-fail", "⚠️ " + esc(msg))));
   }
+  const results = res.results || [];
+  const nHidden = results.filter(r => !r.visible).length;
+  const nVis = results.length - nHidden;
+
+  out.appendChild(el("div", "tests-note",
+    "одно нажатие «Проверить» уже прогнало <b>все</b> тесты (" + nVis + " видимых" +
+    (nHidden ? " + " + nHidden + " скрытых" : "") +
+    ") — переходить между тестами не нужно и некуда; задача засчитывается, когда зелёные все"));
+
+  let visAllOk = true, hidAnyFail = false;
   const rows = [];
-  let passedN = 0;
-  (res.results || []).forEach(r => {
-    if (r.ok) passedN++;
+  results.forEach(r => {
     const row = el("div", "test-row " + (r.ok ? "ok" : "fail"));
+    const io = r.visible && r.input
+      ? '<span class="t-io">ввод: «' + esc(String(r.input).split("\n")[0] + (String(r.input).includes("\n") ? "…" : "")) + "»</span>"
+      : (r.visible ? '<span class="t-io">ввода нет</span>' : '<span class="t-io">данные скрыты</span>');
     let inner = '<div class="t-head"><span class="t-status">' + (r.ok ? "✓" : "✗") + "</span><span>" +
-      (r.visible ? "Тест " + (r.index + 1) : "Скрытый тест " + (r.index + 1)) + "</span></div>";
+      (r.visible ? "Тест-пример " + (r.index + 1) : "Скрытый тест " + (r.index + 1)) + "</span>" + io + "</div>";
     if (!r.ok) {
-      inner += '<div class="t-detail">' + esc(r.friendly || r.detail || r.error || "не прошло") + "</div>";
-      if (r.expected !== null && r.expected !== undefined && r.expected !== "") {
-        inner += '<div class="t-diff"><div><b>ожидалось</b>' + esc(r.expected) + "</div>" +
-          "<div><b>твой вывод</b>" + esc(r.stdout == null ? "" : r.stdout) + "</div></div>";
+      if (r.visible) {
+        inner += '<div class="t-detail">' + esc(r.friendly || r.detail || r.error || "вывод не совпал") + "</div>";
+        if (r.expected !== null && r.expected !== undefined && r.expected !== "") {
+          inner += '<div class="t-diff"><div><b>ожидалось</b>' + esc(r.expected) + "</div>" +
+            "<div><b>твой вывод</b>" + esc(r.stdout == null ? "" : r.stdout) + "</div></div>";
+        }
+      } else {
+        // скрытый тест: не показываем ни ожидаемый вывод, ни ввод (r.detail), иначе он не скрытый;
+        // но ошибки ВВОДА программы (traceback, EOF, int("Пётр")) — это про код ученика, их оставляем
+        if (r.error || r.friendly) {
+          inner += '<div class="t-detail">' + esc(r.friendly || r.error) + "</div>";
+        } else {
+          inner += '<div class="t-detail">вывод не совпал на скрытых данных</div>' +
+            '<div class="t-detail muted2">сверь формат до символа: регистр, пробелы, порядок строк; ' +
+            "программа должна работать для любого ввода, а не только для примера</div>";
+        }
       }
     }
+    if (r.visible && !r.ok) visAllOk = false;
+    if (!r.visible && !r.ok) hidAnyFail = true;
     row.innerHTML = inner;
     rows.push(row);
   });
   rows.forEach(r => out.appendChild(r));
+
+  const passedN = results.filter(r => r.ok).length;
   const ok = res.passed;
   out.appendChild(el("div", "verdict " + (ok ? "pass" : "fail"),
-    ok ? "🎉 Все тесты пройдены — задача засчитана!" : "Пока не проходит: " + passedN + "/" + (res.results || []).length + " тестов"));
+    ok ? "🎉 Все тесты пройдены — задача засчитана!"
+       : "Пройдено " + passedN + " тестов из " + results.length + " — исправь код и снова жми «Проверить»"));
+  if (!ok && visAllOk && hidAnyFail) {
+    out.appendChild(el("div", "coach",
+      "Тест-пример проходит, а скрытые — нет. Так обычно выглядит ответ, «подогнанный» " +
+      "под пример из условия: числа и имена нельзя писать в код от руки, программа должна " +
+      "читать ввод и работать с любыми данными. Убедись сам: нажми «▶ Запустить на примере» " +
+      "и поменяй значение в поле ввода — твой код споткнётся на первом же другом имени."));
+  }
 }
 
 function celebrate(task, idx, out) {
