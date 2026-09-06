@@ -53,7 +53,7 @@ check("3/3 — открыта ровно одна следующая тема", 
 check("следующая за «Переменные» — «Кортежи и множества»",
   CORE.nextLesson(FLAT, isDone, 0) === 1 && FLAT[1].id === "tuples_sets");
 check("все задачи решены → next = null-маркер -1 на последнем",
-  CORE.nextLesson(FLAT, new Set(), 999) === -1 || true); // last-проверка ниже
+  CORE.nextLesson(FLAT, isDone, FLAT.length - 1) === -1);
 
 // доводим мостик-01 до конца → открывается мостик-02
 const ids1 = taskIdsOf(1);
