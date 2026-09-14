@@ -29,10 +29,11 @@ const done = new Set();
 const key = (l, t) => l + ":" + t;
 const isDone = (l, t) => done.has(key(l, t));
 
-check("9 уроков в плоском индексе", FLAT.length === 9);
-check("порядок: сначала basics, потом bridge 01..08",
+const ALL_LESSON_IDS = DATA.stages.flatMap((st) => st.lessons.map((ls) => ls.data.id));
+check("в плоском индексе все уроки из index.json (" + ALL_LESSON_IDS.length + ")", FLAT.length === ALL_LESSON_IDS.length);
+check("порядок: по спискам этапов из index.json (basics → bridge)",
   FLAT[0].id === "variables" &&
-  FLAT.slice(1).map((x) => x.id).join() === DATA.stages[1].lessons.map((ls) => ls.data.id).join());
+  FLAT.map((x) => x.id).join() === ALL_LESSON_IDS.join());
 
 // старт: открыт только первый урок
 let fl = CORE.unlockedFlags(FLAT, isDone);
@@ -50,21 +51,21 @@ done.add(key(FLAT[0].id, ids0[2]));
 fl = CORE.unlockedFlags(FLAT, isDone);
 check("3/3 — урок засчитан", CORE.lessonComplete(FLAT[0], isDone));
 check("3/3 — открыта ровно одна следующая тема", fl[1] && !fl[2]);
-check("следующая за «Переменные» — «Кортежи и множества»",
-  CORE.nextLesson(FLAT, isDone, 0) === 1 && FLAT[1].id === "tuples_sets");
+check("следующая за «Переменные» — «Условия» (второй урок этапа 1)",
+  CORE.nextLesson(FLAT, isDone, 0) === 1 && FLAT[1].id === "conditions");
 check("все задачи решены → next = null-маркер -1 на последнем",
   CORE.nextLesson(FLAT, isDone, FLAT.length - 1) === -1);
 
-// доводим мостик-01 до конца → открывается мостик-02
+// доводим урок 2 из списка до конца → открывается урок 3
 const ids1 = taskIdsOf(1);
 ids1.forEach((x) => done.add(key(FLAT[1].id, x)));
 fl = CORE.unlockedFlags(FLAT, isDone);
-check("урок tuples_sets решён (3/3) → открыт comprehensions", fl[2] && !fl[3]);
+check("урок " + FLAT[1].id + " решён целиком → открыт " + (FLAT[2] || {}).id, fl[2] && !fl[3]);
 
 // проходим все уроки подряд — открываются все, nextLesson в конце = -1
 FLAT.forEach((it) => it.taskIds.forEach((x) => done.add(key(it.id, x))));
 fl = CORE.unlockedFlags(FLAT, isDone);
-check("полное прохождение → все 9 открыты", fl.every(Boolean));
+check("полное прохождение → все " + ALL_LESSON_IDS.length + " открыты", fl.every(Boolean));
 check("после последнего урока идти некуда", CORE.nextLesson(FLAT, isDone, FLAT.length - 1) === -1);
 
 // firstOpenTask: после сброса указывает на первую нерешённую
