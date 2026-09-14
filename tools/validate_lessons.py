@@ -38,7 +38,7 @@ SMART_QUOTES = "«»“”‘’"
 ALLOWED_TASK_KEYS = {
     "id", "title", "difficulty", "statement", "input_format", "output_format",
     "examples", "hints", "tests", "checks", "compare", "solution", "wrong_solution",
-    "starter_code", "note",
+    "starter_code", "note", "theory",
 }
 ALLOWED_TEST_KEYS = {"input", "output", "visible", "files", "output_files",
                      "code_before", "code_after", "note"}
@@ -106,7 +106,7 @@ def check_code_style(rep, where, code, what="код"):
 
 # ----------------------------------------------------------------------------
 
-def validate_theory(rep, where, theory):
+def validate_theory(rep, where, theory, mini=False, spravka=False):
     if not theory:
         rep.error(where, "теория пуста")
         return
@@ -167,10 +167,19 @@ def validate_theory(rep, where, theory):
     if n_code == 0:
         rep.warn(where, "в теории нет ни одного примера кода — новичку будет трудно")
     total_chars = sum(len(b.get("text", "")) + len(b.get("code", "")) for b in theory if isinstance(b, dict))
-    if total_chars < 800:
-        rep.warn(where, f"теория очень короткая ({total_chars} символов), ориентир 1500–5000")
-    if total_chars > 9000:
-        rep.warn(where, f"теория очень длинная ({total_chars} символов) — разбей на два урока")
+    if spravka:
+        pass  # общая справка при мини-теории в задачах: объём не оцениваем
+    elif mini:
+        # мини-теория к одной задаче: короткая по замыслу — «простыня» здесь противопоказана
+        if total_chars < 200:
+            rep.warn(where, f"мини-теория совсем скудная ({total_chars} символов) — дай хотя бы один пример кода")
+        if total_chars > 2500:
+            rep.warn(where, f"мини-теория перегружена ({total_chars} символов) — её сила в краткости перед задачей")
+    else:
+        if total_chars < 800:
+            rep.warn(where, f"теория очень короткая ({total_chars} символов), ориентир 1500–5000")
+        if total_chars > 9000:
+            rep.warn(where, f"теория очень длинная ({total_chars} символов) — разбей на два урока")
 
 
 def validate_task(rep, where, task, lesson_id, seen_ids):
@@ -196,6 +205,11 @@ def validate_task(rep, where, task, lesson_id, seen_ids):
     hints = expect(rep, where, task, "hints", list)
     if hints is not None and len(hints) == 0:
         rep.warn(where, "нет подсказок (рекомендуется 2–3: от общей идеи к почти-решению)")
+
+    if "theory" in task:
+        task_theory = expect(rep, where, task, "theory", list)
+        if task_theory is not None:
+            validate_theory(rep, f"{where}.theory", task_theory, mini=True)
 
     if "starter_code" in task and task["starter_code"]:
         rep.warn(where, "starter_code непустой: по требованию проекта редактор должен быть ПУСТ. "
@@ -322,10 +336,13 @@ def validate_lesson(path, rep, seen_lesson_ids, seen_task_ids):
     goals = expect(rep, where, data, "goals", list)
     if goals is not None and not (2 <= len(goals) <= 6):
         rep.warn(where, f"goals: {len(goals)} пунктов, ориентир 2–5")
+    tasks = expect(rep, where, data, "tasks", list)
     theory = expect(rep, where, data, "theory", list)
     if theory is not None:
-        validate_theory(rep, where, theory)
-    tasks = expect(rep, where, data, "tasks", list)
+        # если мини-теория разложена по задачам, общая теория урока — это свёрнутая
+        # справка: краткость там норма, проверки объёма пропускаем
+        spravka = isinstance(tasks, list) and any(isinstance(t, dict) and t.get("theory") for t in tasks)
+        validate_theory(rep, where, theory, spravka=spravka)
     if tasks is not None:
         if not (2 <= len(tasks) <= 5):
             rep.warn(where, f"tasks: {len(tasks)} задач, ориентир 3–4 (от простой к сложной)")

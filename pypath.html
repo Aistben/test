@@ -122,6 +122,14 @@ a { color: var(--accent); }
 .lesson-item.locked { opacity: 0.45; }
 
 .side-foot { margin-top: 22px; padding: 0 4px; display: flex; flex-direction: column; gap: 7px; }
+.side-clock {
+  margin-top: 10px; padding: 10px 8px 0; text-align: center;
+  border-top: 1px solid var(--bd);
+}
+.side-clock .clock-time {
+  display: block; font: 700 20px/1.2 var(--mono); color: var(--accent); letter-spacing: 2px;
+}
+.side-clock .clock-date { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
 .side-btn {
   border: 1px solid var(--bd); background: transparent; color: var(--text-dim);
   padding: 8px 11px; border-radius: 10px; font: inherit; font-size: 13px; cursor: pointer;
@@ -463,12 +471,41 @@ details.hints li .inline-code { background: rgba(255, 255, 255, 0.06); color: #f
   .fmt, .two-cols, .task .examples .ex, .test-row .t-diff { grid-template-columns: 1fr; }
 }
 
+/* ---------- v4: мини-теория внутри карточки задачи ---------- */
+.editor-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.editor-bar .editor-tip { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+.task-theory {
+  margin: 12px 0 4px; padding: 14px 16px;
+  border: 1px solid var(--bd); border-left: 3px solid var(--accent);
+  border-radius: 12px; background: var(--bg-card2);
+}
+.task-theory .tt-title {
+  font-size: 11px; font-weight: 700; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 8px;
+}
+.task-theory > p { margin: 8px 0; }
+details.lesson-theory-book {
+  margin: 18px 0; border: 1px solid var(--bd); border-radius: 12px;
+  background: rgba(96, 154, 255, 0.04);
+}
+details.lesson-theory-book > summary {
+  cursor: pointer; padding: 12px 16px; font-weight: 600; color: var(--text-dim);
+  list-style: none;
+}
+details.lesson-theory-book > summary::before { content: "▸ "; color: var(--accent); }
+details.lesson-theory-book[open] > summary::before { content: "▾ "; }
+details.lesson-theory-book .theory { padding: 0 16px 16px; }
+
 /* ---------- v3: запуск по примеру, эталон, замки ---------- */
 .io-box { margin-top: 12px; }
-.io-box label {
-  display: block; font-size: 10.5px; color: var(--muted);
-  text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 5px;
+.io-box .io-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 5px; }
+.io-box .io-title {
+  font-size: 10.5px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1.2px;
 }
+.io-box .io-head .tiny-btn { text-transform: none; letter-spacing: 0; }
+.io-box .io-hint { margin-top: 6px; font-size: 12px; line-height: 1.45; color: var(--muted); }
+.io-box .io-hint code { font-size: 11px; }
 .io-box textarea.stdin {
   width: 100%; resize: vertical; padding: 9px 13px; background: var(--bg-code);
   color: #cfe0f5; border: 1px dashed var(--bd-strong); border-radius: 10px;
@@ -815,7 +852,7 @@ window.PypathCore = (function () {
 })();
 
 window.PY_TRAINER_DATA = {
- "built": "2026-09-06 15:40",
+ "built": "2026-09-11 10:18",
  "pyodide": {
   "version": "0.26.4",
   "cdn": "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/"
@@ -845,127 +882,6 @@ window.PY_TRAINER_DATA = {
        "Печатать результат через print() и f-строки"
       ],
       "theory": [
-       {
-        "type": "text",
-        "text": "Переменная — это имя, к которому привязано значение. Знак `=` в Python не «равно», а «положить в»: справа вычисляется значение, слева — имя, под которым его сохранили."
-       },
-       {
-        "type": "code",
-        "code": "age = 25\nname = \"Анна\"\nprice = 199.9\nis_student = True\n\nprint(age)\nprint(name)",
-        "output": "25\nАнна",
-        "run_check": true
-       },
-       {
-        "type": "list",
-        "title": "Разберём первый пример по символам",
-        "items": [
-         "`age` — имя, которое ты придумал сам; через него программа обращается к значению.",
-         "Знак `=` — не «равно», а «присвой»: читай строку справа налево — значение связали с именем.",
-         "Что стоит после `=`, Python сначала вычисляет, а потом связывает результат с именем слева.",
-         "Число `25` без кавычек — это сразу число (int); текст в кавычках — строка.",
-         "`print(...)` — вызов: скобки означают «выполни функцию», то внутри скобок — данные для неё.",
-         "Кавычки означают: «пиши символ в символ, ничего не вычисляй» — и наоборот, без кавычек Python ищет имя."
-        ]
-       },
-       {
-        "type": "text",
-        "text": "У каждого значения есть тип. Четыре главных типа, с которых всё начинается:"
-       },
-       {
-        "type": "table",
-        "header": [
-         "Тип",
-         "Что это",
-         "Примеры"
-        ],
-        "rows": [
-         [
-          "int",
-          "целое число",
-          "0, 42, -7"
-         ],
-         [
-          "float",
-          "дробное число (через точку!)",
-          "3.14, -0.5, 2.0"
-         ],
-         [
-          "str",
-          "строка — любой текст в кавычках",
-          "\"привет\", 'A', \"123\""
-         ],
-         [
-          "bool",
-          "логическое: истина или ложь",
-          "True, False"
-         ]
-        ]
-       },
-       {
-        "type": "text",
-        "text": "Тип можно узнать функцией `type()`. Обрати внимание: `\"123\"` в кавычках — это строка, а не число. С ней нельзя считать."
-       },
-       {
-        "type": "code",
-        "code": "print(type(42))\nprint(type(\"42\"))\nprint(type(4.2))",
-        "output": "<class 'int'>\n<class 'str'>\n<class 'float'>",
-        "run_check": true
-       },
-       {
-        "type": "warning",
-        "text": "Всё, что возвращает input(), — ВСЕГДА строка, даже если пользователь ввёл цифры. Чтобы считать, строку нужно превратить в число: `int(input())` для целых, `float(input())` для дробных."
-       },
-       {
-        "type": "code",
-        "code": "a = \"5\"\nb = \"7\"\nprint(a + b)          # строки склеиваются\nprint(int(a) + int(b))  # числа складываются",
-        "output": "57\n12",
-        "run_check": true
-       },
-       {
-        "type": "text",
-        "text": "Преобразование типов: `int(x)`, `float(x)`, `str(x)`. Обратно в строку значение превращают, когда нужно склеить его с текстом. Удобнее всего — f-строка: перед кавычкой ставим букву `f`, а переменные пишем в фигурных скобках."
-       },
-       {
-        "type": "text",
-        "text": "int() принимает только «чистую» строку с целым: int(\"3.5\") — ошибка. Если в строке точка, бери сначала float(), а потом уже int(float(x)) — дробная часть отбрасывается, без округления."
-       },
-       {
-        "type": "code",
-        "code": "print(int(\"42\"))\nprint(float(\"3.5\"))\nprint(int(float(\"3.9\")))\nprint(str(7) + str(8))",
-        "output": "42\n3.5\n3\n78",
-        "run_check": true
-       },
-       {
-        "type": "text",
-        "text": "Связка `int(input())` из задач — это две функции в одной строке, читай её изнутри наружу: сначала `input()` ждёт, пока ученик напечатает строку, затем `int(...)` превращает её в число. Пустые скобки `()` после `input` — тоже часть вызова: «выполни, данных не нужно». Без `int()` числа нельзя складывать: `input()` возвращает строку, а строки, соединённые `+`, склеиваются — «2» + «3» даст «23», а не 5."
-       },
-       {
-        "type": "code",
-        "code": "name = \"Иван\"\nage = 30\nprint(f\"Меня зовут {name}, мне {age} лет\")\nprint(f\"Через год мне будет {age + 1}\")",
-        "output": "Меня зовут Иван, мне 30 лет\nЧерез год мне будет 31",
-        "run_check": true
-       },
-       {
-        "type": "list",
-        "title": "f-строка по символам",
-        "items": [
-         "Буква `f` перед кавычкой — флаг: «внутри ищи фигурные скобки, это не текст, а вставки».",
-         "Всё, что вне `{}`, печатается символ в символ (пробелы и запятые — твои).",
-         "`{name}` — вставь сюда значение переменной name.",
-         "`{age + 1}` — внутри скобок может быть выражение: Python сначала вычислит его.",
-         "`{total:.2f}` — после `:` идёт формат: `.2` — сколько знаков после точки, `f` — дробный вид."
-        ]
-       },
-       {
-        "type": "text",
-        "text": "Дробные числа в f-строке можно форматировать прямо в фигурных скобках: `f\"{x:.2f}\"` — ровно два знака после точки (с округлением). Пригодится для денег."
-       },
-       {
-        "type": "code",
-        "code": "price = 199.9\ntotal = price * 3\nprint(f\"{total:.2f}\")\nprint(f\"{total:.0f}\")\nprint(f\"{3.14159:.1f}\")",
-        "output": "599.70\n600\n3.1",
-        "run_check": true
-       },
        {
         "type": "text",
         "text": "Имена переменных: латинские буквы, цифры и подчёркивание, не начинаются с цифры. Пиши осмысленно и в нижнем регистре: `user_age`, а не `a` или `UserAge`. Регистр важен: `age` и `Age` — разные переменные."
@@ -1044,6 +960,51 @@ window.PY_TRAINER_DATA = {
        {
         "id": "variables_t1",
         "title": "Приветствие",
+        "theory": [
+         {
+          "type": "text",
+          "text": "Любая задача тренажёра решается двумя функциями: `input()` читает строку, которую «напечатал пользователь», а `print()` печатает ответ. `name = input()` — положили напечатанное в переменную `name`."
+         },
+         {
+          "type": "text",
+          "text": "Переменная — это имя, к которому привязано значение. Знак `=` в Python не «равно», а «положить в»: справа вычисляется значение, слева — имя, под которым его сохранили."
+         },
+         {
+          "type": "code",
+          "code": "age = 25\nname = \"Анна\"\nprice = 199.9\nis_student = True\n\nprint(age)\nprint(name)",
+          "output": "25\nАнна",
+          "run_check": true
+         },
+         {
+          "type": "list",
+          "title": "Разберём первый пример по символам",
+          "items": [
+           "`age` — имя, которое ты придумал сам; через него программа обращается к значению.",
+           "Знак `=` — не «равно», а «присвой»: читай строку справа налево — значение связали с именем.",
+           "Что стоит после `=`, Python сначала вычисляет, а потом связывает результат с именем слева.",
+           "Число `25` без кавычек — это сразу число (int); текст в кавычках — строка.",
+           "`print(...)` — вызов: скобки означают «выполни функцию», то внутри скобок — данные для неё.",
+           "Кавычки означают: «пиши символ в символ, ничего не вычисляй» — и наоборот, без кавычек Python ищет имя."
+          ]
+         },
+         {
+          "type": "code",
+          "code": "name = \"Иван\"\nage = 30\nprint(f\"Меня зовут {name}, мне {age} лет\")\nprint(f\"Через год мне будет {age + 1}\")",
+          "output": "Меня зовут Иван, мне 30 лет\nЧерез год мне будет 31",
+          "run_check": true
+         },
+         {
+          "type": "list",
+          "title": "f-строка по символам",
+          "items": [
+           "Буква `f` перед кавычкой — флаг: «внутри ищи фигурные скобки, это не текст, а вставки».",
+           "Всё, что вне `{}`, печатается символ в символ (пробелы и запятые — твои).",
+           "`{name}` — вставь сюда значение переменной name.",
+           "`{age + 1}` — внутри скобок может быть выражение: Python сначала вычислит его.",
+           "`{total:.2f}` — после `:` идёт формат: `.2` — сколько знаков после точки, `f` — дробный вид."
+          ]
+         }
+        ],
         "difficulty": 1,
         "statement": "Программа читает одну строку — имя пользователя — и выводит приветствие в формате `Привет, ИМЯ!` (с запятой, пробелом и восклицательным знаком).",
         "input_format": "Одна строка — имя.",
@@ -1089,6 +1050,84 @@ window.PY_TRAINER_DATA = {
        {
         "id": "variables_t2",
         "title": "Сумма двух чисел",
+        "theory": [
+         {
+          "type": "text",
+          "text": "У каждого значения есть тип. Четыре главных типа, с которых всё начинается:"
+         },
+         {
+          "type": "table",
+          "header": [
+           "Тип",
+           "Что это",
+           "Примеры"
+          ],
+          "rows": [
+           [
+            "int",
+            "целое число",
+            "0, 42, -7"
+           ],
+           [
+            "float",
+            "дробное число (через точку!)",
+            "3.14, -0.5, 2.0"
+           ],
+           [
+            "str",
+            "строка — любой текст в кавычках",
+            "\"привет\", 'A', \"123\""
+           ],
+           [
+            "bool",
+            "логическое: истина или ложь",
+            "True, False"
+           ]
+          ]
+         },
+         {
+          "type": "text",
+          "text": "Тип можно узнать функцией `type()`. Обрати внимание: `\"123\"` в кавычках — это строка, а не число. С ней нельзя считать."
+         },
+         {
+          "type": "code",
+          "code": "print(type(42))\nprint(type(\"42\"))\nprint(type(4.2))",
+          "output": "<class 'int'>\n<class 'str'>\n<class 'float'>",
+          "run_check": true
+         },
+         {
+          "type": "warning",
+          "text": "Всё, что возвращает input(), — ВСЕГДА строка, даже если пользователь ввёл цифры. Чтобы считать, строку нужно превратить в число: `int(input())` для целых, `float(input())` для дробных."
+         },
+         {
+          "type": "note",
+          "text": "Скобки в `input()` — это НЕ значение! `input(\"Как тебя зовут? \")` просто печатает подсказку и ждёт, пока кто-то напечатает на клавиатуре. Хочешь задать значение сам — пиши `name = \"Анна\"`: Python не ругнётся, но задача в тренажёре так не зачтётся — проверка подаёт СВОЙ тестовый ввод (она как бы сама «печатает на клавиатуре»), а захардкоженное имя его проигнорирует. Потыкать самому: внизу каждой задачи поле «Твой ввод» — печатай туда что угодно и жми «▶ Запустить с моим вводом»."
+         },
+         {
+          "type": "code",
+          "code": "a = \"5\"\nb = \"7\"\nprint(a + b)          # строки склеиваются\nprint(int(a) + int(b))  # числа складываются",
+          "output": "57\n12",
+          "run_check": true
+         },
+         {
+          "type": "text",
+          "text": "Преобразование типов: `int(x)`, `float(x)`, `str(x)`. Обратно в строку значение превращают, когда нужно склеить его с текстом. Удобнее всего — f-строка: перед кавычкой ставим букву `f`, а переменные пишем в фигурных скобках."
+         },
+         {
+          "type": "text",
+          "text": "int() принимает только «чистую» строку с целым: int(\"3.5\") — ошибка. Если в строке точка, бери сначала float(), а потом уже int(float(x)) — дробная часть отбрасывается, без округления."
+         },
+         {
+          "type": "code",
+          "code": "print(int(\"42\"))\nprint(float(\"3.5\"))\nprint(int(float(\"3.9\")))\nprint(str(7) + str(8))",
+          "output": "42\n3.5\n3\n78",
+          "run_check": true
+         },
+         {
+          "type": "text",
+          "text": "Связка `int(input())` из задач — это две функции в одной строке, читай её изнутри наружу: сначала `input()` ждёт, пока ученик напечатает строку, затем `int(...)` превращает её в число. Пустые скобки `()` после `input` — тоже часть вызова: «выполни, данных не нужно». Без `int()` числа нельзя складывать: `input()` возвращает строку, а строки, соединённые `+`, склеиваются — «2» + «3» даст «23», а не 5."
+         }
+        ],
         "difficulty": 1,
         "statement": "Программа читает два целых числа, каждое в отдельной строке, и выводит их сумму. Помни: input() возвращает строку — числа нужно преобразовать.",
         "input_format": "Две строки, в каждой — целое число.",
@@ -1135,6 +1174,22 @@ window.PY_TRAINER_DATA = {
        {
         "id": "variables_t3",
         "title": "Карточка товара",
+        "theory": [
+         {
+          "type": "text",
+          "text": "В прошлой задаче ты читал целые числа связкой `int(input())`. Здесь цена — дробное число, поэтому `price = float(input())`, а количество снова целое: `count = int(input())`."
+         },
+         {
+          "type": "text",
+          "text": "Дробные числа в f-строке можно форматировать прямо в фигурных скобках: `f\"{x:.2f}\"` — ровно два знака после точки (с округлением). Пригодится для денег."
+         },
+         {
+          "type": "code",
+          "code": "price = 199.9\ntotal = price * 3\nprint(f\"{total:.2f}\")\nprint(f\"{total:.0f}\")\nprint(f\"{3.14159:.1f}\")",
+          "output": "599.70\n600\n3.1",
+          "run_check": true
+         }
+        ],
         "difficulty": 2,
         "statement": "Программа читает название товара, его цену (дробное число) и количество (целое). Выведи три строки: название, цену за штуку и итоговую стоимость — ровно в формате из примера. Итог — это цена, умноженная на количество, выведи его с двумя знаками после точки.",
         "input_format": "Три строки: название (строка), цена (float), количество (int).",
@@ -1190,6 +1245,344 @@ window.PY_TRAINER_DATA = {
       "further": [
        "Официальная документация: docs.python.org/3/tutorial/introduction.html",
        "pythontutor.ru — раздел «Ввод-вывод, арифметика»"
+      ]
+     }
+    },
+    {
+     "file": "basics/02_conditions.json",
+     "data": {
+      "id": "conditions",
+      "stage": "basics",
+      "order": 2,
+      "title": "Условия: if / elif / else",
+      "subtitle": "Учим программу принимать решения, а не выполнять всё подряд",
+      "minutes": 45,
+      "version": 1,
+      "goals": [
+       "Понимать, как if / elif / else выбирают ветку программы",
+       "Писать условия операторами сравнения: ==, !=, <, >, <=, >=",
+       "Соединять условия через and / or / not",
+       "Не бояться отступов: 4 пробела — это часть языка"
+      ],
+      "theory": [
+       {
+        "type": "text",
+        "text": "Справка: некоторые значения Python считает «ложными» без всякого сравнения — это `0`, `0.0`, пустая строка `\"\"` и `None`. Всё остальное — «истинное». Поэтому опытные пишут коротко: `if age:` вместо `if age != 0:`. Пока учишься — пиши сравнение явно, так понятнее глазам."
+       },
+       {
+        "type": "code",
+        "caption": "что Python считает ложью",
+        "code": "print(bool(0))\nprint(bool(\"\"))\nprint(bool(\"0\"))   # непустая строка — это истина!",
+        "output": "False\nFalse\nTrue",
+        "run_check": true
+       },
+       {
+        "type": "note",
+        "text": "Результат сравнения — тоже значение (тип bool), его можно сохранить в переменную: `is_adult = age >= 18`. Дальше можно писать просто `if is_adult:` — читается почти как русский язык."
+       }
+      ],
+      "tasks": [
+       {
+        "id": "conditions_t1",
+        "title": "Совершеннолетний?",
+        "theory": [
+         {
+          "type": "text",
+          "text": "До сих пор программа выполняла все строки подряд, как рецепт. Теперь она научится ВЫБИРАТЬ: «ЕСЛИ условие истинно — делаем одно, ИНАЧЕ — другое». Это и есть `if` / `else`."
+         },
+         {
+          "type": "code",
+          "caption": "первая развилка",
+          "code": "temperature = 25\n\nif temperature > 20:\n    print(\"Тепло, идём гулять\")\nelse:\n    print(\"Холодно, сидим дома\")",
+          "output": "Тепло, идём гулять",
+          "run_check": true
+         },
+         {
+          "type": "list",
+          "title": "Разберём по символам",
+          "items": [
+           "`if УСЛОВИЕ:` — «если условие истинно, выполни то, что ниже и с ОТСТУПОМ».",
+           "Двоеточие в конце строки обязательно — читай его как «тогда:».",
+           "Отступ 4 пробела — ТАК Python понимает, какие строки «внутри» условия.",
+           "`else:` — «иначе»: выполнится, когда условие не сбылось. Внутри — тоже отступ.",
+           "Строка БЕЗ отступа после блока — уже снаружи, она выполнится всегда."
+          ]
+         },
+         {
+          "type": "table",
+          "header": [
+           "оператор",
+           "что значит"
+          ],
+          "rows": [
+           [
+            "==",
+            "равно (ДВА знака!)"
+           ],
+           [
+            "!=",
+            "не равно"
+           ],
+           [
+            "<",
+            "меньше"
+           ],
+           [
+            ">",
+            "больше"
+           ],
+           [
+            "<=",
+            "меньше или равно"
+           ],
+           [
+            ">=",
+            "больше или равно"
+           ]
+          ]
+         },
+         {
+          "type": "warning",
+          "text": "`=` ПРИСВАИВАЕТ, а `==` СРАВНИВАЕТ. Запись `if age = 18:` — синтаксическая ошибка. И отступы — часть языка: клавиша Tab в редакторе сама вставит 4 пробела."
+         }
+        ],
+        "difficulty": 1,
+        "statement": "Программа читает возраст пользователя (целое число). Если возраст 18 лет или больше — выведи `Доступ разрешён`, иначе — `Доступ запрещён`.",
+        "input_format": "Одна строка — целое число, возраст.",
+        "output_format": "Одна строка: `Доступ разрешён` или `Доступ запрещён`.",
+        "examples": [
+         {
+          "input": "21",
+          "output": "Доступ разрешён"
+         }
+        ],
+        "hints": [
+         "Прочитай возраст через `int(input())` — сравнивать будем число с числом.",
+         "Условие на «18 и больше»: `if age >= 18:`. Не забудь двоеточие и 4 пробела у print внутри.",
+         "Вторая ветка — `else:` с таким же отступом, что и `if`."
+        ],
+        "tests": [
+         {
+          "input": "21",
+          "output": "Доступ разрешён",
+          "visible": true
+         },
+         {
+          "input": "18",
+          "output": "Доступ разрешён"
+         },
+         {
+          "input": "17",
+          "output": "Доступ запрещён"
+         },
+         {
+          "input": "0",
+          "output": "Доступ запрещён"
+         },
+         {
+          "input": "99",
+          "output": "Доступ разрешён"
+         }
+        ],
+        "checks": {
+         "must_use": [
+          "if",
+          "input"
+         ]
+        },
+        "solution": "age = int(input())\nif age >= 18:\n    print(\"Доступ разрешён\")\nelse:\n    print(\"Доступ запрещён\")",
+        "wrong_solution": "age = int(input())\nif age > 18:\n    print(\"Доступ разрешён\")\nelse:\n    print(\"Доступ запрещён\")"
+       },
+       {
+        "id": "conditions_t2",
+        "title": "Отрицательное, ноль или положительное",
+        "theory": [
+         {
+          "type": "text",
+          "text": "Веток может быть больше двух. `elif` (сокращение от else if — «иначе если») добавляет ещё одну проверку. Лесенка выглядит так: `if` — первый вопрос, сколько угодно `elif` — уточнения, `else` — запасной вариант, если ничего не подошло."
+         },
+         {
+          "type": "code",
+          "caption": "лесенка if / elif / else",
+          "code": "score = 85\n\nif score >= 90:\n    print(\"Отлично\")\nelif score >= 60:\n    print(\"Зачёт\")\nelse:\n    print(\"Пересдача\")",
+          "output": "Зачёт",
+          "run_check": true
+         },
+         {
+          "type": "list",
+          "title": "Как это читается",
+          "items": [
+           "Проверки идут СВЕРХУ ВНИЗ. Первая истинная — сработала, остальные пропускаются.",
+           "Срабатывает всегда НЕ БОЛЬШЕ ОДНОЙ ветки.",
+           "`else` выполнится только если не сбылось ничего выше. Его можно не писать вовсе.",
+           "Все слова if / elif / else пишутся на одном уровне отступа (в самом левом краю), а их тела — внутри с отступом."
+          ]
+         },
+         {
+          "type": "warning",
+          "text": "Порядок условий ВАЖЕН! Если поставить `score >= 60` выше, чем `score >= 90`, то 95 баллов попадут в «Зачёт» — первое совпавшее условие побеждает, до «Отлично» дело не дойдёт."
+         }
+        ],
+        "difficulty": 2,
+        "statement": "Программа читает целое число. Выведи `Отрицательное`, если оно меньше нуля, `Ноль`, если оно равно нулю, и `Положительное`, если больше нуля. Ровно одна строка вывода.",
+        "input_format": "Одна строка — целое число.",
+        "output_format": "Одна строка: `Отрицательное`, `Ноль` или `Положительное`.",
+        "examples": [
+         {
+          "input": "-5",
+          "output": "Отрицательное"
+         }
+        ],
+        "hints": [
+         "Три ветви — это лесенка: `if n < 0:` … `elif n == 0:` … `else:` …",
+         "`else` здесь можно прочитать как «осталось только положительное».",
+         "Не делай ТРИ отдельных `if` подряд — тогда для нуля сработают две проверки и вывод продублируется."
+        ],
+        "tests": [
+         {
+          "input": "-5",
+          "output": "Отрицательное",
+          "visible": true
+         },
+         {
+          "input": "0",
+          "output": "Ноль"
+         },
+         {
+          "input": "7",
+          "output": "Положительное"
+         },
+         {
+          "input": "-1000000",
+          "output": "Отрицательное"
+         },
+         {
+          "input": "42",
+          "output": "Положительное"
+         }
+        ],
+        "checks": {
+         "must_use": [
+          "if",
+          "elif",
+          "input"
+         ]
+        },
+        "solution": "n = int(input())\nif n < 0:\n    print(\"Отрицательное\")\nelif n == 0:\n    print(\"Ноль\")\nelse:\n    print(\"Положительное\")",
+        "wrong_solution": "n = int(input())\nif n < 0:\n    print(\"Отрицательное\")\nif n == 0:\n    print(\"Ноль\")\nif n >= 0:\n    print(\"Положительное\")"
+       },
+       {
+        "id": "conditions_t3",
+        "title": "Касса со скидкой",
+        "theory": [
+         {
+          "type": "text",
+          "text": "Условия можно соединять в более хитрые. `and` — истинно, только когда верны ОБЕ части. `or` — когда верна ХОТЯ БЫ ОДНА. `not` — переворачивает значение наоборот."
+         },
+         {
+          "type": "table",
+          "header": [
+           "запись",
+           "результат"
+          ],
+          "rows": [
+           [
+            "True and True",
+            "True"
+           ],
+           [
+            "True and False",
+            "False"
+           ],
+           [
+            "False or True",
+            "True"
+           ],
+           [
+            "False or False",
+            "False"
+           ],
+           [
+            "not True",
+            "False"
+           ]
+          ]
+         },
+         {
+          "type": "code",
+          "caption": "два условия сразу",
+          "code": "money = 2000\ncard = \"да\"\n\nif money >= 1000 and card == \"да\":\n    print(\"Скидка добыта\")\nelse:\n    print(\"Без скидки\")",
+          "output": "Скидка добыта",
+          "run_check": true
+         },
+         {
+          "type": "note",
+          "text": "Строки сравниваются посимвольно с учётом регистра: `card == \"да\"` будет ложью для `Да`, `ДА` и даже `да ` с пробелом на конце. input() отдаёт строку ровно такой, как её напечатали."
+         }
+        ],
+        "difficulty": 2,
+        "statement": "Программа читает сумму покупки (дробное число) и ответ покупателя `да` или `нет` — есть ли у него скидочная карта. Скидка 10% действует, ТОЛЬКО когда сумма не меньше 1000 И карта есть. Если скидка применена, выведи `Итого со скидкой: X`, иначе — `Итого: X`. Суммы выводи с двумя знаками после точки (это ты уже умеешь: `{x:.2f}`).",
+        "input_format": "Две строки: сумма покупки (float), затем `да` или `нет`.",
+        "output_format": "Одна строка: `Итого со скидкой: СУММА` или `Итого: СУММА`, где СУММА — число с двумя знаками после точки.",
+        "examples": [
+         {
+          "input": "2000\nда",
+          "output": "Итого со скидкой: 1800.00"
+         }
+        ],
+        "hints": [
+         "Сумма — `float(input())`, ответ про карту — просто `input()` (это строка).",
+         "Проверяй оба условия разом: `if amount >= 1000 and card == \"да\":`.",
+         "Со скидкой 10% покупатель платит 90%: `total = amount * 0.9`. Вывод через `f\"{total:.2f}\"`."
+        ],
+        "tests": [
+         {
+          "input": "2000\nда",
+          "output": "Итого со скидкой: 1800.00",
+          "visible": true
+         },
+         {
+          "input": "1000\nда",
+          "output": "Итого со скидкой: 900.00"
+         },
+         {
+          "input": "999.99\nда",
+          "output": "Итого: 999.99"
+         },
+         {
+          "input": "3000\nнет",
+          "output": "Итого: 3000.00"
+         },
+         {
+          "input": "500\nнет",
+          "output": "Итого: 500.00"
+         },
+         {
+          "input": "2500.5\nда",
+          "output": "Итого со скидкой: 2250.45"
+         }
+        ],
+        "checks": {
+         "must_use": [
+          "if",
+          "and",
+          "input"
+         ]
+        },
+        "solution": "amount = float(input())\ncard = input()\n\nif amount >= 1000 and card == \"да\":\n    total = amount * 0.9\n    print(f\"Итого со скидкой: {total:.2f}\")\nelse:\n    print(f\"Итого: {amount:.2f}\")",
+        "wrong_solution": "amount = float(input())\ncard = input()\n\nif amount >= 1000:\n    total = amount * 0.9\n    print(f\"Итого со скидкой: {total:.2f}\")\nelse:\n    print(f\"Итого: {amount:.2f}\")"
+       }
+      ],
+      "summary": [
+       "if УСЛОВИЕ: — выполнить отступленный блок, если условие истинно; двоеточие и 4 пробела обязательны.",
+       "elif добавляет проверку, else — ветка «иначе»; срабатывает не больше одной ветки, сверху вниз.",
+       "== сравнивает, = присваивает — не путай!",
+       "Логика: and (оба верны), or (хотя бы одно), not (переворот).",
+       "Строки сравниваются точно, по символам и с учётом регистра."
+      ],
+      "further": [
+       "pythontutor.ru — раздел «Условия: if, then, else»",
+       "Официальная документация: docs.python.org/3/tutorial/controlflow.html"
       ]
      }
     }
@@ -3587,6 +3980,95 @@ window.PY_TRAINER_DATA = {
 };
 
 "use strict";
+/* app/format.js — «🪄 Автоотступы»: лёгкий выравниватель учебного Python-кода.
+ *
+ * Это НЕ полноценный форматтер (black/autopep8), а безопасная эвристика
+ * для маленьких учебных программ:
+ *   - табы превращает в 4 пробела;
+ *   - хвостовые пробелы убирает;
+ *   - глубину считает по строкам, оканчивающимся на «:»
+ *     (if/for/while/def/class/with/try/match...);
+ *   - слова-сдвигатели (else/elif/except/finally/case) сначала убавляют
+ *     отступ, потом снова открывают блок своим «:»;
+ *   - строки внутри тройных кавычек и продолжения выражений в скобках
+ *     НЕ трогает (оставляет как написано).
+ *
+ * Экспорт: window.PyFmt = { autoIndent }.
+ */
+window.PyFmt = (function () {
+
+  var DEDENT_RX = /^(else:\s*$|finally:\s*$|elif\s|elif\b.*:$|except\b|case\b)/;
+  var TRIPLES = ['"""', "'''"];
+
+  // строка без «хвостового» комментария (# ...) и без литералов строк
+  function codePart(s) {
+    var t = s.startsWith("#") ? "" : s.replace(/\s+#.*$/, "");
+    return t;
+  }
+  function stripStrings(s) {
+    return s
+      .replace(/"[^"\\\n]*(\\.[^"\\\n]*)*"/g, '""')
+      .replace(/'[^'\\\n]*(\\.[^'\\\n]*)*'/g, "''");
+  }
+  function parenBalance(s) {
+    var open = (s.match(/[([{]/g) || []).length;
+    var close = (s.match(/[)\]}]/g) || []).length;
+    return open - close;
+  }
+  function countTriple(s, mark) {
+    var n = 0, i = s.indexOf(mark);
+    while (i >= 0) { n++; i = s.indexOf(mark, i + mark.length); }
+    return n;
+  }
+
+  function autoIndent(src) {
+    var depth = 0;
+    var parens = 0;
+    var inTriple = null;
+    var lines = String(src).replace(/\t/g, "    ").split("\n");
+
+    return lines.map(function (raw) {
+      var noTail = raw.replace(/\s+$/, "");
+      var trimmed = noTail.trim();
+
+      // внутри тройной строки: не трогаем, ищем только закрывающие кавычки
+      if (inTriple) {
+        if (countTriple(trimmed, inTriple) % 2 === 1) inTriple = null;
+        return noTail;
+      }
+      if (!trimmed) return "";
+
+      // запоминаем, открылась ли тройная строка (нечётное число маркеров)
+      for (var k = 0; k < TRIPLES.length; k++) {
+        if (countTriple(trimmed, TRIPLES[k]) % 2 === 1) { inTriple = TRIPLES[k]; break; }
+      }
+
+      var code = codePart(trimmed);
+      var bare = stripStrings(code);
+
+      // продолжение выражения в скобках — оставляем как написал ученик
+      if (parens > 0) {
+        parens = Math.max(0, parens + parenBalance(bare));
+        return noTail;
+      }
+
+      var out;
+      if (DEDENT_RX.test(code)) {
+        depth = Math.max(0, depth - 1);
+        out = "    ".repeat(depth) + trimmed;
+      } else {
+        out = "    ".repeat(depth) + trimmed;
+      }
+      if (/:$/.test(code) && !trimmed.startsWith("#")) depth += 1;
+      parens = Math.max(0, parenBalance(bare));
+      return out;
+    }).join("\n");
+  }
+
+  return { autoIndent: autoIndent };
+})();
+
+"use strict";
 /*
  * pypath-тренажёр — клиентское приложение.
  * Все данные (уроки, тесты, harness.py) вшиты в app/data.js генератором
@@ -3660,7 +4142,11 @@ const doneCount = () => ALL_TASKS.filter(x => store.isDone(x.lesson.data.id, x.t
 
 const FLAT = CORE.makeIndex(DATA.stages);
 const isDone = (lid, tid) => store.isDone(lid, tid);
-const unlockedFlags = () => CORE.unlockedFlags(FLAT, isDone);
+/* Режим «открытая библиотека» (по просьбе ученика, 2026-09-10): все темы доступны
+   сразу — порядок уроков это рекомендация, а не замок. Логика последовательной
+   разблокировки в ядре (CORE.unlockedFlags) сохранена для тестов и возможного
+   возврата строгого режима. */
+const unlockedFlags = () => FLAT.map(() => true);
 const flatPos = () => FLAT.findIndex((x) => x.si === state.stage && x.li === state.lesson);
 
 const newReviewState = () => ({ mode: "all", screen: "home", session: null, round: null, celebration: null });
@@ -3801,17 +4287,61 @@ function renderSidebar() {
   fresh.title = "Перезагрузить app.css, app.js и data.js минуя кэш браузера";
   fresh.onclick = hardReload;
   foot.appendChild(fresh);
+  const fullBtn = el("button", "side-btn", "⛶ на весь экран");
+  fullBtn.title = "Раскрыть тренажёр на весь экран монитора (Esc — вернуть)";
+  fullBtn.onclick = toggleFullscreen;
+  foot.appendChild(fullBtn);
+  const tabBtn = el("button", "side-btn", "↗ в отдельной вкладке");
+  tabBtn.title = "Открыть тренажёр в новой вкладке браузера — удобно на весь экран";
+  tabBtn.onclick = () => window.open(location.href, "_blank", "noopener");
+  foot.appendChild(tabBtn);
   side.appendChild(foot);
+
+  const clock = el("div", "side-clock",
+    '<span class="clock-time"></span><span class="clock-date"></span>');
+  side.appendChild(clock);
+  tickSideClock();
 
   if (DATA.built) {
     side.appendChild(el("div", "build-info", "сборка данных: " + esc(DATA.built)));
   }
 }
 
+/* Часы в сайдбаре: показывают локальное время и дату КОМПЬЮТЕРА ученика
+   (браузер сам знает его часовой пояс), обновляются раз в секунду. */
+function tickSideClock() {
+  const node = document.querySelector(".side-clock");
+  if (!node) return;
+  const now = new Date();
+  const t = node.querySelector(".clock-time");
+  const d = node.querySelector(".clock-date");
+  if (t) t.textContent = now.toLocaleTimeString("ru-RU");
+  if (d) d.textContent = now.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" });
+}
+setInterval(tickSideClock, 1000);
+
+function toggleFullscreen() {
+  const root = document.documentElement;
+  if (document.fullscreenElement) {
+    if (document.exitFullscreen) document.exitFullscreen();
+    return;
+  }
+  if (root.requestFullscreen) {
+    root.requestFullscreen()
+      .then(() => toast("Добро пожаловать на весь экран! Назад — клавиша Esc"))
+      .catch(() => {
+        window.open(location.href, "_blank", "noopener");
+        toast("Браузер не пустил в полноэкранный режим — открыл в новой вкладке");
+      });
+  } else {
+    window.open(location.href, "_blank", "noopener");
+  }
+}
+
 async function hardReload() {
   // обновляем кэш HTTP принудительно, затем обычный reload — он возьмёт свежие файлы
   try {
-    await Promise.all(["app/app.css", "app/core.js", "app/app.js", "app/data.js"].map(
+    await Promise.all(["app/app.css", "app/core.js", "app/format.js", "app/app.js", "app/data.js"].map(
       (u) => fetch(u, { cache: "reload" }).catch(() => null)));
   } catch (e) { /* file:// — fetch может быть недоступен, перезагрузка всё равно поможет */ }
   location.reload();
@@ -3921,6 +4451,13 @@ function renderTask(lessonData, task, idx, options = {}) {
     (solved() ? '<span class="done-badge">✓ ' + (review ? "повторено" : "решено") + '</span>' : "");
   card.appendChild(head);
 
+  if (task.theory && task.theory.length) {
+    const tt = el("div", "task-theory");
+    tt.appendChild(el("div", "tt-title", "📖 Теория именно для этой задачи"));
+    renderTheoryBlocks(tt, task.theory);
+    card.appendChild(tt);
+  }
+
   card.appendChild(el("div", "statement", md(task.statement)));
 
   const fmt = el("div", "fmt");
@@ -3964,34 +4501,109 @@ function renderTask(lessonData, task, idx, options = {}) {
   };
   ta.addEventListener("input", saveDraft);
   ta.addEventListener("keydown", (e) => {
+    const s = ta.selectionStart, tEnd = ta.selectionEnd;
+    const lineStart = ta.value.lastIndexOf("\n", s - 1) + 1;
+    let lineEnd = ta.value.indexOf("\n", tEnd);
+    if (lineEnd < 0) lineEnd = ta.value.length;
+
     if (e.key === "Tab") {
       e.preventDefault();
-      const s = ta.selectionStart, t = ta.selectionEnd;
-      ta.value = ta.value.slice(0, s) + "    " + ta.value.slice(t);
-      ta.selectionStart = ta.selectionEnd = s + 4;
+      const block = ta.value.slice(lineStart, lineEnd);
+      if (e.shiftKey) {
+        // Shift+Tab: убрать по 4 пробела у всех затронутых строк
+        let totalCut = 0, firstCut = 0;
+        const lines = block.split("\n").map((l, i) => {
+          let n = 0;
+          if (l.startsWith("    ")) n = 4;
+          else { const m = l.match(/^ {1,3}/); if (m) n = m[0].length; }
+          if (i === 0) firstCut = n;
+          totalCut += n;
+          return l.slice(n);
+        });
+        ta.value = ta.value.slice(0, lineStart) + lines.join("\n") + ta.value.slice(lineEnd);
+        ta.selectionStart = Math.max(lineStart, s - firstCut);
+        ta.selectionEnd = Math.max(ta.selectionStart, tEnd - totalCut);
+      } else if (tEnd > s && block.includes("\n")) {
+        // Tab по выделенному блоку: отступить все строки
+        const lines = block.split("\n");
+        ta.value = ta.value.slice(0, lineStart) + lines.map((l) => "    " + l).join("\n") + ta.value.slice(lineEnd);
+        ta.selectionStart = s + 4;
+        ta.selectionEnd = tEnd + lines.length * 4;
+      } else {
+        ta.value = ta.value.slice(0, s) + "    " + ta.value.slice(tEnd);
+        ta.selectionStart = ta.selectionEnd = s + 4;
+      }
       saveDraft();
+      return;
     }
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doCheck(); }
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doCheck(); return; }
+    if (e.key === "Enter") {
+      // живой автоотступ: повторяем отступ строки; после «:» — +4 пробела
+      e.preventDefault();
+      const cur = ta.value.slice(lineStart, s);
+      const base = (cur.match(/^ */) || [""])[0];
+      const extra = (/:\s*$/.test(cur) && !cur.trimStart().startsWith("#")) ? "    " : "";
+      const insert = "\n" + (cur.trim() === "" ? "" : base + extra);
+      ta.value = ta.value.slice(0, s) + insert + ta.value.slice(tEnd);
+      ta.selectionStart = ta.selectionEnd = s + insert.length;
+      saveDraft();
+      return;
+    }
+    if (e.key === "Backspace" && s === tEnd && s - lineStart >= 4) {
+      // Backspace по отступу в начале строки: убрать сразу 4 пробела
+      const before = ta.value.slice(lineStart, s);
+      if (/^ +$/.test(before) && before.length % 4 === 0) {
+        e.preventDefault();
+        ta.value = ta.value.slice(0, s - 4) + ta.value.slice(tEnd);
+        ta.selectionStart = ta.selectionEnd = s - 4;
+        saveDraft();
+      }
+    }
   });
+  const edBar = el("div", "editor-bar");
+  const fmtBtn = el("button", "tiny-btn", "🪄 Автоотступы");
+  fmtBtn.title = "Выровнять весь код: табы → 4 пробела, сдвиг после двоеточий. После — пробеги глазами и жми «Проверить»";
+  fmtBtn.onclick = () => {
+    if (!window.PyFmt) return toast("Форматтер не загрузился — жёсткое обновление поможет");
+    ta.value = window.PyFmt.autoIndent(ta.value);
+    saveDraft();
+    toast("Отступы подровнял! Глянь вложенные места — и «Проверить»");
+  };
+  edBar.appendChild(fmtBtn);
+  edBar.appendChild(el("span", "editor-tip",
+    "Enter после «:» сам даёт отступ · Shift+Tab — убрать · Tab по выделенному — сдвинуть блок"));
+  editor.appendChild(edBar);
   editor.appendChild(ta);
   card.appendChild(editor);
 
   const visTest = (task.tests || []).find((t) => t.visible) || (task.tests || [])[0] || {};
-  const ioBox = el("div", "io-box");
-  const ioLabel = el("label", null, "ввод программы для «Запустить» (как если бы ученик напечатал с клавиатуры)");
+  const exampleInput = visTest.input || "";
+  const ioBox = el("div", "io-box manual-io");
+  const ioHead = el("div", "io-head");
+  ioHead.appendChild(el("span", "io-title", "⌨️ Твой ввод — печатай сам, как будто ты пользователь программы"));
+  const restoreBtn = el("button", "tiny-btn", "↺ ввод из примера");
+  restoreBtn.title = "Подставить в поле данные из примера в условии";
+  restoreBtn.onclick = () => { stdinTa.value = exampleInput; stdinTa.focus(); };
+  ioHead.appendChild(restoreBtn);
   const stdinTa = document.createElement("textarea");
   stdinTa.className = "stdin";
-  stdinTa.rows = 2;
-  stdinTa.placeholder = "— ввод не нужен —";
-  stdinTa.value = visTest.input || "";
+  stdinTa.rows = Math.max(3, (exampleInput ? exampleInput.split("\n").length : 0) + 1);
+  stdinTa.placeholder = exampleInput ? "" : "— этой программе ввод не нужен —";
+  stdinTa.value = exampleInput;
   stdinTa.id = "stdin-" + task.id;
-  ioLabel.htmlFor = stdinTa.id;
-  ioBox.append(ioLabel, stdinTa);
+  stdinTa.setAttribute("aria-label", "Твой ввод для запуска программы");
+  ioBox.appendChild(ioHead);
+  ioBox.appendChild(stdinTa);
+  ioBox.appendChild(el("div", "io-hint",
+    md("Каждый `input()` «съедает» одну строку сверху вниз. Меняй текст в поле как хочешь — своё имя, другие цифры — " +
+       "и программа отработает на ТВОИХ данных. «Проверить» всегда гоняет тесты со своим вводом, это нормально.")));
   card.appendChild(ioBox);
 
   const actions = el("div", "task-actions");
   const checkBtn = el("button", "btn primary", "Проверить");
-  const runBtn = el("button", "btn ghost", "▶ Запустить на примере");
+  checkBtn.title = "Тесты проверки сами подставляют свой ввод и сверяют вывод";
+  const runBtn = el("button", "btn ghost", "▶ Запустить с моим вводом");
+  runBtn.title = "Запустить код с тем, что напечатано в поле «Твой ввод»";
   if (task.tests && task.tests.some((t) => t.code_before || t.code_after)) {
     runBtn.title = "Задача проверяется вызовом твоей функции — нажми «Проверить»";
   } else if (visTest.files) {
@@ -4153,8 +4765,8 @@ function renderResults(out, res) {
     out.appendChild(el("div", "coach",
       "Тест-пример проходит, а скрытые — нет. Так обычно выглядит ответ, «подогнанный» " +
       "под пример из условия: числа и имена нельзя писать в код от руки, программа должна " +
-      "читать ввод и работать с любыми данными. Убедись сам: нажми «▶ Запустить на примере» " +
-      "и поменяй значение в поле ввода — твой код споткнётся на первом же другом имени."));
+      "читать ввод и работать с любыми данными. Убедись сам: нажми «▶ Запустить с моим вводом» " +
+      "со своим значением в поле «Твой ввод» — твой код споткнётся на первом же другом имени."));
   }
 }
 
@@ -4208,10 +4820,21 @@ function render() {
     main.appendChild(g);
   }
 
-  main.appendChild(el("h3", "block-h", "📖 Теория"));
-  const theory = el("div", "theory");
-  renderTheoryBlocks(theory, d.theory);
-  main.appendChild(theory);
+  const perTaskTheory = d.tasks.some(t => t.theory && t.theory.length);
+  if (perTaskTheory) {
+    // мини-теория лежит прямо в карточках задач, а вся простыня — свёрнута в справку
+    const book = el("details", "lesson-theory-book");
+    book.innerHTML = "<summary>📚 Справка: общая теория темы (+ раздел, который был простынёй)</summary>";
+    const theory = el("div", "theory");
+    renderTheoryBlocks(theory, d.theory);
+    book.appendChild(theory);
+    main.appendChild(book);
+  } else {
+    main.appendChild(el("h3", "block-h", "📖 Теория"));
+    const theory = el("div", "theory");
+    renderTheoryBlocks(theory, d.theory);
+    main.appendChild(theory);
+  }
 
   main.appendChild(el("h3", "block-h", "⌨️ Практика"));
   const tasksWrap = el("div", "tasks");

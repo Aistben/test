@@ -115,6 +115,14 @@ a { color: var(--accent); }
 .lesson-item.locked { opacity: 0.45; }
 
 .side-foot { margin-top: 22px; padding: 0 4px; display: flex; flex-direction: column; gap: 7px; }
+.side-clock {
+  margin-top: 10px; padding: 10px 8px 0; text-align: center;
+  border-top: 1px solid var(--bd);
+}
+.side-clock .clock-time {
+  display: block; font: 700 20px/1.2 var(--mono); color: var(--accent); letter-spacing: 2px;
+}
+.side-clock .clock-date { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
 .side-btn {
   border: 1px solid var(--bd); background: transparent; color: var(--text-dim);
   padding: 8px 11px; border-radius: 10px; font: inherit; font-size: 13px; cursor: pointer;
@@ -456,12 +464,41 @@ details.hints li .inline-code { background: rgba(255, 255, 255, 0.06); color: #f
   .fmt, .two-cols, .task .examples .ex, .test-row .t-diff { grid-template-columns: 1fr; }
 }
 
+/* ---------- v4: мини-теория внутри карточки задачи ---------- */
+.editor-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.editor-bar .editor-tip { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+.task-theory {
+  margin: 12px 0 4px; padding: 14px 16px;
+  border: 1px solid var(--bd); border-left: 3px solid var(--accent);
+  border-radius: 12px; background: var(--bg-card2);
+}
+.task-theory .tt-title {
+  font-size: 11px; font-weight: 700; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 8px;
+}
+.task-theory > p { margin: 8px 0; }
+details.lesson-theory-book {
+  margin: 18px 0; border: 1px solid var(--bd); border-radius: 12px;
+  background: rgba(96, 154, 255, 0.04);
+}
+details.lesson-theory-book > summary {
+  cursor: pointer; padding: 12px 16px; font-weight: 600; color: var(--text-dim);
+  list-style: none;
+}
+details.lesson-theory-book > summary::before { content: "▸ "; color: var(--accent); }
+details.lesson-theory-book[open] > summary::before { content: "▾ "; }
+details.lesson-theory-book .theory { padding: 0 16px 16px; }
+
 /* ---------- v3: запуск по примеру, эталон, замки ---------- */
 .io-box { margin-top: 12px; }
-.io-box label {
-  display: block; font-size: 10.5px; color: var(--muted);
-  text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 5px;
+.io-box .io-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 5px; }
+.io-box .io-title {
+  font-size: 10.5px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1.2px;
 }
+.io-box .io-head .tiny-btn { text-transform: none; letter-spacing: 0; }
+.io-box .io-hint { margin-top: 6px; font-size: 12px; line-height: 1.45; color: var(--muted); }
+.io-box .io-hint code { font-size: 11px; }
 .io-box textarea.stdin {
   width: 100%; resize: vertical; padding: 9px 13px; background: var(--bg-code);
   color: #cfe0f5; border: 1px dashed var(--bd-strong); border-radius: 10px;

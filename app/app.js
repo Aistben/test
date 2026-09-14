@@ -72,7 +72,11 @@ const doneCount = () => ALL_TASKS.filter(x => store.isDone(x.lesson.data.id, x.t
 
 const FLAT = CORE.makeIndex(DATA.stages);
 const isDone = (lid, tid) => store.isDone(lid, tid);
-const unlockedFlags = () => CORE.unlockedFlags(FLAT, isDone);
+/* Режим «открытая библиотека» (по просьбе ученика, 2026-09-10): все темы доступны
+   сразу — порядок уроков это рекомендация, а не замок. Логика последовательной
+   разблокировки в ядре (CORE.unlockedFlags) сохранена для тестов и возможного
+   возврата строгого режима. */
+const unlockedFlags = () => FLAT.map(() => true);
 const flatPos = () => FLAT.findIndex((x) => x.si === state.stage && x.li === state.lesson);
 
 const newReviewState = () => ({ mode: "all", screen: "home", session: null, round: null, celebration: null });
@@ -213,17 +217,61 @@ function renderSidebar() {
   fresh.title = "Перезагрузить app.css, app.js и data.js минуя кэш браузера";
   fresh.onclick = hardReload;
   foot.appendChild(fresh);
+  const fullBtn = el("button", "side-btn", "⛶ на весь экран");
+  fullBtn.title = "Раскрыть тренажёр на весь экран монитора (Esc — вернуть)";
+  fullBtn.onclick = toggleFullscreen;
+  foot.appendChild(fullBtn);
+  const tabBtn = el("button", "side-btn", "↗ в отдельной вкладке");
+  tabBtn.title = "Открыть тренажёр в новой вкладке браузера — удобно на весь экран";
+  tabBtn.onclick = () => window.open(location.href, "_blank", "noopener");
+  foot.appendChild(tabBtn);
   side.appendChild(foot);
+
+  const clock = el("div", "side-clock",
+    '<span class="clock-time"></span><span class="clock-date"></span>');
+  side.appendChild(clock);
+  tickSideClock();
 
   if (DATA.built) {
     side.appendChild(el("div", "build-info", "сборка данных: " + esc(DATA.built)));
   }
 }
 
+/* Часы в сайдбаре: показывают локальное время и дату КОМПЬЮТЕРА ученика
+   (браузер сам знает его часовой пояс), обновляются раз в секунду. */
+function tickSideClock() {
+  const node = document.querySelector(".side-clock");
+  if (!node) return;
+  const now = new Date();
+  const t = node.querySelector(".clock-time");
+  const d = node.querySelector(".clock-date");
+  if (t) t.textContent = now.toLocaleTimeString("ru-RU");
+  if (d) d.textContent = now.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" });
+}
+setInterval(tickSideClock, 1000);
+
+function toggleFullscreen() {
+  const root = document.documentElement;
+  if (document.fullscreenElement) {
+    if (document.exitFullscreen) document.exitFullscreen();
+    return;
+  }
+  if (root.requestFullscreen) {
+    root.requestFullscreen()
+      .then(() => toast("Добро пожаловать на весь экран! Назад — клавиша Esc"))
+      .catch(() => {
+        window.open(location.href, "_blank", "noopener");
+        toast("Браузер не пустил в полноэкранный режим — открыл в новой вкладке");
+      });
+  } else {
+    window.open(location.href, "_blank", "noopener");
+  }
+}
+
 async function hardReload() {
   // обновляем кэш HTTP принудительно, затем обычный reload — он возьмёт свежие файлы
   try {
-    await Promise.all(["app/app.css", "app/core.js", "app/app.js", "app/data.js"].map(
+    await Promise.all(["app/app.css", "app/core.js", "app/format.js", "app/app.js", "app/data.js"].map(
       (u) => fetch(u, { cache: "reload" }).catch(() => null)));
   } catch (e) { /* file:// — fetch может быть недоступен, перезагрузка всё равно поможет */ }
   location.reload();
@@ -333,6 +381,13 @@ function renderTask(lessonData, task, idx, options = {}) {
     (solved() ? '<span class="done-badge">✓ ' + (review ? "повторено" : "решено") + '</span>' : "");
   card.appendChild(head);
 
+  if (task.theory && task.theory.length) {
+    const tt = el("div", "task-theory");
+    tt.appendChild(el("div", "tt-title", "📖 Теория именно для этой задачи"));
+    renderTheoryBlocks(tt, task.theory);
+    card.appendChild(tt);
+  }
+
   card.appendChild(el("div", "statement", md(task.statement)));
 
   const fmt = el("div", "fmt");
@@ -376,34 +431,109 @@ function renderTask(lessonData, task, idx, options = {}) {
   };
   ta.addEventListener("input", saveDraft);
   ta.addEventListener("keydown", (e) => {
+    const s = ta.selectionStart, tEnd = ta.selectionEnd;
+    const lineStart = ta.value.lastIndexOf("\n", s - 1) + 1;
+    let lineEnd = ta.value.indexOf("\n", tEnd);
+    if (lineEnd < 0) lineEnd = ta.value.length;
+
     if (e.key === "Tab") {
       e.preventDefault();
-      const s = ta.selectionStart, t = ta.selectionEnd;
-      ta.value = ta.value.slice(0, s) + "    " + ta.value.slice(t);
-      ta.selectionStart = ta.selectionEnd = s + 4;
+      const block = ta.value.slice(lineStart, lineEnd);
+      if (e.shiftKey) {
+        // Shift+Tab: убрать по 4 пробела у всех затронутых строк
+        let totalCut = 0, firstCut = 0;
+        const lines = block.split("\n").map((l, i) => {
+          let n = 0;
+          if (l.startsWith("    ")) n = 4;
+          else { const m = l.match(/^ {1,3}/); if (m) n = m[0].length; }
+          if (i === 0) firstCut = n;
+          totalCut += n;
+          return l.slice(n);
+        });
+        ta.value = ta.value.slice(0, lineStart) + lines.join("\n") + ta.value.slice(lineEnd);
+        ta.selectionStart = Math.max(lineStart, s - firstCut);
+        ta.selectionEnd = Math.max(ta.selectionStart, tEnd - totalCut);
+      } else if (tEnd > s && block.includes("\n")) {
+        // Tab по выделенному блоку: отступить все строки
+        const lines = block.split("\n");
+        ta.value = ta.value.slice(0, lineStart) + lines.map((l) => "    " + l).join("\n") + ta.value.slice(lineEnd);
+        ta.selectionStart = s + 4;
+        ta.selectionEnd = tEnd + lines.length * 4;
+      } else {
+        ta.value = ta.value.slice(0, s) + "    " + ta.value.slice(tEnd);
+        ta.selectionStart = ta.selectionEnd = s + 4;
+      }
       saveDraft();
+      return;
     }
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doCheck(); }
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doCheck(); return; }
+    if (e.key === "Enter") {
+      // живой автоотступ: повторяем отступ строки; после «:» — +4 пробела
+      e.preventDefault();
+      const cur = ta.value.slice(lineStart, s);
+      const base = (cur.match(/^ */) || [""])[0];
+      const extra = (/:\s*$/.test(cur) && !cur.trimStart().startsWith("#")) ? "    " : "";
+      const insert = "\n" + (cur.trim() === "" ? "" : base + extra);
+      ta.value = ta.value.slice(0, s) + insert + ta.value.slice(tEnd);
+      ta.selectionStart = ta.selectionEnd = s + insert.length;
+      saveDraft();
+      return;
+    }
+    if (e.key === "Backspace" && s === tEnd && s - lineStart >= 4) {
+      // Backspace по отступу в начале строки: убрать сразу 4 пробела
+      const before = ta.value.slice(lineStart, s);
+      if (/^ +$/.test(before) && before.length % 4 === 0) {
+        e.preventDefault();
+        ta.value = ta.value.slice(0, s - 4) + ta.value.slice(tEnd);
+        ta.selectionStart = ta.selectionEnd = s - 4;
+        saveDraft();
+      }
+    }
   });
+  const edBar = el("div", "editor-bar");
+  const fmtBtn = el("button", "tiny-btn", "🪄 Автоотступы");
+  fmtBtn.title = "Выровнять весь код: табы → 4 пробела, сдвиг после двоеточий. После — пробеги глазами и жми «Проверить»";
+  fmtBtn.onclick = () => {
+    if (!window.PyFmt) return toast("Форматтер не загрузился — жёсткое обновление поможет");
+    ta.value = window.PyFmt.autoIndent(ta.value);
+    saveDraft();
+    toast("Отступы подровнял! Глянь вложенные места — и «Проверить»");
+  };
+  edBar.appendChild(fmtBtn);
+  edBar.appendChild(el("span", "editor-tip",
+    "Enter после «:» сам даёт отступ · Shift+Tab — убрать · Tab по выделенному — сдвинуть блок"));
+  editor.appendChild(edBar);
   editor.appendChild(ta);
   card.appendChild(editor);
 
   const visTest = (task.tests || []).find((t) => t.visible) || (task.tests || [])[0] || {};
-  const ioBox = el("div", "io-box");
-  const ioLabel = el("label", null, "ввод программы для «Запустить» (как если бы ученик напечатал с клавиатуры)");
+  const exampleInput = visTest.input || "";
+  const ioBox = el("div", "io-box manual-io");
+  const ioHead = el("div", "io-head");
+  ioHead.appendChild(el("span", "io-title", "⌨️ Твой ввод — печатай сам, как будто ты пользователь программы"));
+  const restoreBtn = el("button", "tiny-btn", "↺ ввод из примера");
+  restoreBtn.title = "Подставить в поле данные из примера в условии";
+  restoreBtn.onclick = () => { stdinTa.value = exampleInput; stdinTa.focus(); };
+  ioHead.appendChild(restoreBtn);
   const stdinTa = document.createElement("textarea");
   stdinTa.className = "stdin";
-  stdinTa.rows = 2;
-  stdinTa.placeholder = "— ввод не нужен —";
-  stdinTa.value = visTest.input || "";
+  stdinTa.rows = Math.max(3, (exampleInput ? exampleInput.split("\n").length : 0) + 1);
+  stdinTa.placeholder = exampleInput ? "" : "— этой программе ввод не нужен —";
+  stdinTa.value = exampleInput;
   stdinTa.id = "stdin-" + task.id;
-  ioLabel.htmlFor = stdinTa.id;
-  ioBox.append(ioLabel, stdinTa);
+  stdinTa.setAttribute("aria-label", "Твой ввод для запуска программы");
+  ioBox.appendChild(ioHead);
+  ioBox.appendChild(stdinTa);
+  ioBox.appendChild(el("div", "io-hint",
+    md("Каждый `input()` «съедает» одну строку сверху вниз. Меняй текст в поле как хочешь — своё имя, другие цифры — " +
+       "и программа отработает на ТВОИХ данных. «Проверить» всегда гоняет тесты со своим вводом, это нормально.")));
   card.appendChild(ioBox);
 
   const actions = el("div", "task-actions");
   const checkBtn = el("button", "btn primary", "Проверить");
-  const runBtn = el("button", "btn ghost", "▶ Запустить на примере");
+  checkBtn.title = "Тесты проверки сами подставляют свой ввод и сверяют вывод";
+  const runBtn = el("button", "btn ghost", "▶ Запустить с моим вводом");
+  runBtn.title = "Запустить код с тем, что напечатано в поле «Твой ввод»";
   if (task.tests && task.tests.some((t) => t.code_before || t.code_after)) {
     runBtn.title = "Задача проверяется вызовом твоей функции — нажми «Проверить»";
   } else if (visTest.files) {
@@ -565,8 +695,8 @@ function renderResults(out, res) {
     out.appendChild(el("div", "coach",
       "Тест-пример проходит, а скрытые — нет. Так обычно выглядит ответ, «подогнанный» " +
       "под пример из условия: числа и имена нельзя писать в код от руки, программа должна " +
-      "читать ввод и работать с любыми данными. Убедись сам: нажми «▶ Запустить на примере» " +
-      "и поменяй значение в поле ввода — твой код споткнётся на первом же другом имени."));
+      "читать ввод и работать с любыми данными. Убедись сам: нажми «▶ Запустить с моим вводом» " +
+      "со своим значением в поле «Твой ввод» — твой код споткнётся на первом же другом имени."));
   }
 }
 
@@ -620,10 +750,21 @@ function render() {
     main.appendChild(g);
   }
 
-  main.appendChild(el("h3", "block-h", "📖 Теория"));
-  const theory = el("div", "theory");
-  renderTheoryBlocks(theory, d.theory);
-  main.appendChild(theory);
+  const perTaskTheory = d.tasks.some(t => t.theory && t.theory.length);
+  if (perTaskTheory) {
+    // мини-теория лежит прямо в карточках задач, а вся простыня — свёрнута в справку
+    const book = el("details", "lesson-theory-book");
+    book.innerHTML = "<summary>📚 Справка: общая теория темы (+ раздел, который был простынёй)</summary>";
+    const theory = el("div", "theory");
+    renderTheoryBlocks(theory, d.theory);
+    book.appendChild(theory);
+    main.appendChild(book);
+  } else {
+    main.appendChild(el("h3", "block-h", "📖 Теория"));
+    const theory = el("div", "theory");
+    renderTheoryBlocks(theory, d.theory);
+    main.appendChild(theory);
+  }
 
   main.appendChild(el("h3", "block-h", "⌨️ Практика"));
   const tasksWrap = el("div", "tasks");
